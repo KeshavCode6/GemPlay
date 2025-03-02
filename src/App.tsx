@@ -1,13 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import MainMenu from "./pages/MainMenu";
-import ChoiceScreen from "./pages/ChoiceScreen";
+import StoryScreen from "./pages/StoryScreen";
 
 const App = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<MainMenu />} />
-        <Route path="/create" element={<ChoiceScreen />} />
+        <Route path="/create" element={<StoryScreen />} />
       </Routes>
     </Router>
   );
