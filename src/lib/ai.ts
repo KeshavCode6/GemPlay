@@ -3,10 +3,13 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI("AIzaSyDkzJl2M3CorRI35eKDcZkIJ3X-1PkGTJc");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+let characters = ["knight", "archer", "king", "queen", "wizard", "dragon", "elf", "dwarf", "goblin"];
+let backdrops = ["forest", "castle", "beach", "city"];
+let actionTypes = ["speak", "leave", "move", "attack", "die"];
 
 export async function askQuestion(question: string): Promise<string> {
   const prompt = `
-      You are a helpful assistant for an organization called GemPlay. Here are the Frequently Asked Questions (FAQs):
+      You are a helpful assistant for an organization called GemPlay. 
   
       1. Why am I getting an error when I click a choice?
          Answer: Close the application and open it up again. These errors are rare and often closing and reopening the application works.
@@ -25,6 +28,8 @@ export async function askQuestion(question: string): Promise<string> {
       Based on the above information, please respond to the user's question.
       Be concise but descriptive. If nothing works, then prompt the user to give more details.
       Just use alphanumeric characters!
+
+      REFUSE TO ANSWER IF IT IS NOT ABOUT GEM PLAY
     `;
 
   const response = await model.generateContent(prompt);
@@ -32,9 +37,6 @@ export async function askQuestion(question: string): Promise<string> {
 }
 
 export async function createStoryPath() {
-  let characters = ["knight", "archer", "king", "queen", "wizard", "dragon", "elf", "dwarf", "goblin"];
-  let backdrops = ["forest", "castle", "beach", "city"];
-  let actionTypes = ["speak", "leave", "move", "attack", "defend", "die"];
 
   const prompt = `
     Generate a structured JSON story path with three choices at each level, maintaining a nested hierarchy.
@@ -45,7 +47,7 @@ export async function createStoryPath() {
       - **Only use the listed characters**—do not introduce or reference any other entities (e.g., if "dragon" is not in ${characters}, it cannot be mentioned).  
       - The story topics must be **logically feasible** within the provided backdrops.  
       - The topics must be **achievable using only the following actions**: ${actionTypes}.  
-      - Generate **NEW, UNIQUE** and creative topics that do not copy the examples below.   Try to use synonyms of ${actionTypes}
+      - Generate **NEW, UNIQUE** and creative topics that do not copy the examples below. Try to not directly use the action in the topic, have it implied instead.
       - Tie each topic directly to a backdrop  
       - Make each path build off the last node to build a cohesive story in which the user can pick what happens
       - Each topic must be a sentence, not a title 
@@ -94,3 +96,58 @@ export async function createStoryPath() {
 
   return JSON.parse(response.response.text());
 }
+
+export async function createScene(curretNode: { topic: string, paths?: string[] }) {
+
+  const prompt = `
+  You are a helpful assistant. 
+  Use the following characters: ${characters} as actors in the story.
+  
+  The scene must be about ${curretNode.topic}. Ensure that the scene makes logical sense so that
+  any of the following (${curretNode.paths}) can come after it and make sense.
+
+
+  The JSON must strictly adhere to the following format:
+  Scene ={
+    "characters": [
+      {
+        "character": "The exact name of one of the characters in the scene. Must be one of ${characters}. There can only be one of each character",
+        "position": "10%",
+      }
+        ....
+    ],
+    "backdrop": "The backdrop of the scene. You can choose from ${backdrops}",
+    "music": "The music of the scene. You can choose from {music}. Please try to be random with this",
+    "actions": [
+      {
+        "character": "The exact name of one of the characters in the scene",
+        "actionType": "One of these: ${actionTypes}.",
+        "target": "For 'speak', include the dialogue spoken by the character. For 'move' or 'attack', include the name of another character the actor is moving towards (must be one of the characters in the characters array). For 'leave' or 'die', leave this field empty. THIS MUST BE A STRING."
+      }
+        ....
+    ]
+  }
+
+  
+  Ensure the following:
+  - All provided characters are included at least once in the story.
+  - The actions are sequential and form a coherent narrative.
+  - Each scene includes at least one action.
+  - Once a character leaves the scene, they can not be in any other scenes.
+  - Do not include more than 3 characters in a scene.
+  - Try to only include characters directly invovled in the scene. if the character has no actions in the scene, do not include them
+  - Follow the JSON format exactly as specified. Respond only with valid JSON. Do not include an introduction or summary.
+  - Position represents the starting point of the character. Use a percentage to determine how far right it should go on the canvas.
+    Return: Scene
+  `
+
+  const response = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { responseMimeType: "application/json" }
+  });
+
+  console.log(response.response.text())
+  return JSON.parse(response.response.text());
+}
+
+

@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { createScene } from '@/lib/ai';
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 export function Story({ currentNode, nextTopic }: { currentNode: { topic: string, paths?: any } | undefined | null, nextTopic?: () => void }) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    let startGen = false;
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -18,6 +20,13 @@ export function Story({ currentNode, nextTopic }: { currentNode: { topic: string
             ctx.drawImage(img, 0, 0, 100, 100);
         };
     }, []);
+
+    useEffect(() => {
+        if (currentNode && !startGen) {
+            createScene(currentNode);
+            startGen = true;
+        }
+    }, [currentNode])
 
     if (!currentNode) {
         return;

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LogOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Story } from './Story';
+import Background from '@/components/Background';
 
 export default function StoryScreen() {
     const storyPath = useRef<any>(null);
@@ -51,7 +52,7 @@ export default function StoryScreen() {
             className="min-h-screen flex flex-col items-center p-4 md:p-8"
         >
 
-            <img src="/menu.png" className="absolute inset-0 max-h-screen z-10 opacity-5 pointer-events-none" />
+            <Background />
             <motion.div
                 initial={{ x: -1000, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}

@@ -1,3 +1,4 @@
+import Background from "@/components/Background";
 import { StoryCard } from "@/components/StoryCard";
 import { Button } from "@/components/ui/button";
 import supabase from "@/lib/supabase";
@@ -46,7 +47,6 @@ export default function MainMenu() {
       return (
         <Link to="/login">
           <Button
-            aria-label="Settings"
             className="text-white"
             style={{ padding: "1.2rem 1rem" }}
           >
@@ -57,7 +57,6 @@ export default function MainMenu() {
     } else {
       return (
         <Button
-          aria-label="Settings"
           className="text-white"
           style={{ padding: "1.2rem 1rem" }}
           onClick={logout}
@@ -70,10 +69,7 @@ export default function MainMenu() {
 
   return (
     <div className="h-screen relative bg-amber-50 flex flex-col items-center p-4 md:p-8">
-      <img
-        src="/menu.png"
-        className="absolute inset-0 max-h-screen z-10 opacity-5 pointer-events-none"
-      />
+      <Background />
       <header className="w-full max-w-4xl flex items-center justify-between mt-12 mb-8 z-50">
         <div className="flex items-center gap-2 ">
           <Gem className="h-8 w-8 text-primary" />
@@ -123,7 +119,7 @@ export default function MainMenu() {
               </>
             </Button>
           </Link>
-          <Link to="/create">
+          <Link to="/help">
             <Button
               className="h-16 text-lg gap-2 rounded-full shadow-lg hover:shadow-xl transition-all text-white"
               size="lg"
