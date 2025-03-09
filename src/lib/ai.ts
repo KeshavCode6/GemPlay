@@ -2,10 +2,37 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI("AIzaSyDkzJl2M3CorRI35eKDcZkIJ3X-1PkGTJc");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const characters = ["archer", "soldier"];
+const backdrops = ["lake", "castle", "cave", "village", "village2", "desert"];
+const actionTypes = ["speak", "leave", "move", "attack", "die"];
+const music = ["calm1", "battle1", "battle2", "calm2"];
 
-let characters = ["knight", "archer", "king", "queen", "wizard", "dragon", "elf", "dwarf", "goblin"];
-let backdrops = ["forest", "castle", "beach", "city"];
-let actionTypes = ["speak", "leave", "move", "attack", "die"];
+export interface Scene {
+  characters: { character: string, position: string, direction: string }[],
+  backdrop: string,
+  msuic: string,
+  actions: { character: string, actionType: string, target: string }[]
+}
+
+export function isValidScene(scene: Scene) {
+  if (typeof scene !== 'object' || scene === null) return false;
+
+  if (!Array.isArray(scene.characters) || !scene.characters.every(c =>
+    typeof c.character === 'string' && characters.includes(c.character) &&
+    typeof c.position === 'number')) return false;
+
+  if (typeof scene.backdrop !== 'string' || !backdrops.includes(scene.backdrop)) return false;
+
+  if (typeof scene.msuic !== 'string' || !music.includes(scene.msuic)) return false;
+
+  if (!Array.isArray(scene.actions) || !scene.actions.every(a =>
+    typeof a.character === 'string' && characters.includes(a.character) &&
+    typeof a.actionType === 'string' && actionTypes.includes(a.actionType) &&
+    typeof a.target === 'string')) return false;
+
+  return true;
+}
+
 
 export async function askQuestion(question: string): Promise<string> {
   const prompt = `
@@ -52,6 +79,8 @@ export async function createStoryPath() {
       - Make each path build off the last node to build a cohesive story in which the user can pick what happens
       - Each topic must be a sentence, not a title 
       - Vary the amount of subpaths there are, between 2-4
+      - Include at least 2 root paths
+      - For each topic, there can only be one of each character (i.e, no goblin army allowed)
 
       Topics = {
         "paths": [
@@ -112,7 +141,8 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
     "characters": [
       {
         "character": "The exact name of one of the characters in the scene. Must be one of ${characters}. There can only be one of each character",
-        "position": "10%",
+        "position": 0.1,
+        "direction":"left or right"
       }
         ....
     ],
