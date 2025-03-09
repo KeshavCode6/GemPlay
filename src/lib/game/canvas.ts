@@ -7,21 +7,44 @@ export class CanvasManager {
     animationFrameId: number | null = null;
     scene: Scene;
     background: HTMLImageElement;
-    characters: Character[] = [];
+    characters: Map<string, Character> = new Map();
     lastTime: number = 0; // Track the last frame time
+    currentAction: number = 0;
+    nextTopic: () => void;
+    speak: (src: string, speech: string) => void;
+    done: boolean = false;
 
-    constructor(canvas: HTMLCanvasElement, scene: Scene) {
+    constructor(canvas: HTMLCanvasElement, scene: Scene, nextTopic: () => void, speak: (src: string, speech: string) => void) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
         this.ctx!.imageSmoothingEnabled = true;
         this.ctx!.imageSmoothingQuality = "low";
+        this.nextTopic = nextTopic;
+        this.speak = speak;
 
         this.scene = scene;
         this.background = new Image();
         this.background.src = `/backdrops/${this.scene.backdrop}.png`;
+        this.nextAction = this.nextAction.bind(this);
 
         scene.characters.forEach((option) => {
-            this.characters.push(new Character(characterMap[option.character as keyof typeof characterMap], option.direction, this.canvas.width * Number(option.position), this.canvas.height - 25));
+            const charKey = option.character;
+            const characterData = characterMap[charKey as keyof typeof characterMap];
+
+            if (characterData) {
+                this.characters.set(
+                    charKey,
+                    new Character(
+                        characterData,
+                        option.direction,
+                        this.canvas.width * Number(option.position),
+                        this.canvas,
+                        speak
+                    )
+                );
+            } else {
+                console.error(`Character "${charKey}" not found in characterMap.`);
+            }
         });
     }
 
@@ -44,10 +67,35 @@ export class CanvasManager {
         this.draw();
         this.animationFrameId = requestAnimationFrame((time) => this.update(time));
 
-        this.characters.forEach((character) => {
+        for (const character of this.characters.values()) {
             if (!this.ctx) return;
             character.update(this.ctx, deltaTime);
-        });
+        }
+
+        if (this.done) { return; }
+
+        const action = this.scene.actions[this.currentAction];
+        const actionCharacter = this.characters.get(action.character)
+        let target: any = action.target;
+
+        if (action.actionType == "move") {
+            target = this.characters.get(action.target)?.x ?? 0;
+        }
+
+        actionCharacter?.handleAction(action.actionType, target, this.nextAction)
+    }
+
+    nextAction() {
+        this.currentAction += 1
+
+        if (this.currentAction >= this.scene.actions.length) {
+            this.done = true;
+            setTimeout(() => {
+                if (this.nextTopic) {
+                    this.nextTopic();
+                }
+            }, 5000);
+        }
     }
 
     start() {

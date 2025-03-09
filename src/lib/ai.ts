@@ -11,7 +11,7 @@ export interface Scene {
   characters: { character: string, position: string, direction: string }[],
   backdrop: string,
   msuic: string,
-  actions: { character: string, actionType: string, target: string }[]
+  actions: { character: string, actionType: "move" | "leave" | "speak", target: string }[]
 }
 
 export function isValidScene(scene: Scene) {
@@ -81,6 +81,7 @@ export async function createStoryPath() {
       - Vary the amount of subpaths there are, between 2-4
       - Include at least 2 root paths
       - For each topic, there can only be one of each character (i.e, no goblin army allowed)
+      - The characters must always be on the same backdrop
 
       Topics = {
         "paths": [
@@ -147,12 +148,12 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
         ....
     ],
     "backdrop": "The backdrop of the scene. You can choose from ${backdrops}",
-    "music": "The music of the scene. You can choose from {music}. Please try to be random with this",
+    "music": "The music of the scene. You can choose from ${music}. Please try to be random with this",
     "actions": [
       {
         "character": "The exact name of one of the characters in the scene",
         "actionType": "One of these: ${actionTypes}.",
-        "target": "For 'speak', include the dialogue spoken by the character. For 'move' or 'attack', include the name of another character the actor is moving towards (must be one of the characters in the characters array). For 'leave' or 'die', leave this field empty. THIS MUST BE A STRING."
+        "target": "For 'speak', include the dialogue spoken by the character. For 'move' or 'attack', include the name of another character the actor is moving towards (IT HAS be one of the characters in the characters array). For 'leave', put either left for the character to leave the scene from the left, or right. For 'die', leave this field empty. THIS MUST BE A STRING."
       }
         ....
     ]
@@ -165,9 +166,11 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
   - Each scene includes at least one action.
   - Once a character leaves the scene, they can not be in any other scenes.
   - Do not include more than 3 characters in a scene.
+  - The characters must always be on the same backdrop
+  - Do NOT reference characters that do not exist in the target attribute. You may NOT refrenece backdrops as well
   - Try to only include characters directly invovled in the scene. if the character has no actions in the scene, do not include them
   - Follow the JSON format exactly as specified. Respond only with valid JSON. Do not include an introduction or summary.
-  - Position represents the starting point of the character. Use a percentage to determine how far right it should go on the canvas.
+  - Position represents the starting point of the character. Use a percentage to determine how far right it should go on the canvas, where 0 is on the left and 1 is on the right
     Return: Scene
   `
 

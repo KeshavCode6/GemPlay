@@ -7,6 +7,7 @@ import { LogOut } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Story } from './Story';
 import Background from '@/components/Background';
+import { Link } from 'react-router';
 
 export default function StoryScreen() {
     const storyPath = useRef<any>(null);
@@ -89,10 +90,13 @@ export default function StoryScreen() {
                                         ) : (
                                             <div className="my-32 w-full flex justify-center text-2xl font-bold">THE END!!</div>
                                         )}
-                                        <Button
-                                            variant={"destructive"}
-                                            className="w-full h-[4rem] text-lg text-white" onClick={() => { }}>
-                                            <LogOut /> Exit</Button>
+                                        <Link to={"/"}>
+                                            <Button
+                                                variant={"destructive"}
+                                                className="w-full h-[4rem] text-lg text-white" onClick={() => { }}>
+                                                <LogOut /> Exit</Button>
+                                        </Link>
+
                                     </div>
                                 ) : (
                                     <Loading />
