@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router";
-import supabase from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export function LoginForm({
   className,

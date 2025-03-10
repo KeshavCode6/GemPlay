@@ -1,7 +1,7 @@
 import Background from "@/components/Background";
 import { StoryCard } from "@/components/StoryCard";
 import { Button } from "@/components/ui/button";
-import supabase from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { Cog, Gem, HelpCircle, Plus, UserIcon } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -46,10 +46,7 @@ export default function MainMenu() {
     if (!session) {
       return (
         <Link to="/login">
-          <Button
-            className="text-white"
-            style={{ padding: "1.2rem 1rem" }}
-          >
+          <Button className="text-white" style={{ padding: "1.2rem 1rem" }}>
             <UserIcon className="h-5 w-5" /> Login
           </Button>
         </Link>
