@@ -23,7 +23,9 @@ export class Character {
     speak: any;
     canvas: HTMLCanvasElement;
     animationsLoaded: boolean = false;
-    frameSpacing: number = 2; // Spacing between frames in the spritesheet
+    frameSpacing: number = 2;
+    targetPosition: number | null = null; // Stores movement target
+    nextAction: any;
 
     constructor(character: string, direction: string, x: number, canvas: HTMLCanvasElement, speak: any) {
         this.animationSet = character;
@@ -35,22 +37,17 @@ export class Character {
         this.frameSpeed = 0.1;
         this.frameTimer = 0;
 
-        // Set initial position
         this.setPosition(x, canvas.height - this.height);
-
-        // Start loading animations
         this.loadAnimations();
     }
 
     setPosition(x: number, y: number) {
         this.x = x - this.spriteOffsetX / 2;
         this.y = y + this.spriteOffsetY / 2;
-
     }
 
     async loadAnimations() {
         let animations = ["idle", "walk", "death", "attack01"];
-
         try {
             const loadPromises = animations.map(async (animation) => {
                 const capitalizedAnimation = capitalize(animation);
@@ -62,7 +59,7 @@ export class Character {
                     image.onload = () => {
                         console.log(`Loaded ${animation} animation, width: ${image.width}`);
                         const frameCount = Math.floor(image.width / this.width);
-                        this.animations[capitalize(animation)] = { image, frameCount };
+                        this.animations[capitalizedAnimation] = { image, frameCount };
                         resolve();
                     };
                     image.onerror = () => {
@@ -83,7 +80,6 @@ export class Character {
 
     setAnimation(animation: string) {
         console.log(`Attempting to set animation: ${animation}`);
-
         const capitalizedAnim = capitalize(animation);
 
         if (!this.animationsLoaded) {
@@ -103,75 +99,64 @@ export class Character {
             this.frameTimer = 0;
         }
     }
+
     stop() {
         this.setAnimation("idle");
     }
 
     update(ctx: CanvasRenderingContext2D, deltaTime: number) {
-        if (!this.animations[this.currentAnimation]) {
-            return;
-        }
+        if (!this.animations[this.currentAnimation]) return;
 
         this.frameTimer += deltaTime;
 
         if (this.frameTimer >= this.frameSpeed) {
             this.frameTimer = 0;
-            this.currentFrame += 1;
 
-            if (this.currentFrame >= this.animations[this.currentAnimation].frameCount) {
-                this.currentFrame = 0;
+            if (!(this.currentAnimation == "death" && this.currentFrame == this.animations[this.currentAnimation].frameCount)) {
+                this.currentFrame = (this.currentFrame + 1) % this.animations[this.currentAnimation].frameCount;
+            }
+        }
+
+        // Move towards target position if set
+        if (this.targetPosition !== null) {
+            const diff = this.targetPosition - this.x;
+            this.direction = diff < 0 ? "left" : "right";
+            this.x += this.speed * (this.direction === "left" ? -0.25 : .25);
+            this.setAnimation("walk");
+
+            if (Math.abs(this.x - this.targetPosition) <= 35) {
+                this.targetPosition = null;
+                this.setAnimation("idle");
+                this.nextAction();
+                this.nextAction = null;
             }
         }
 
         this.draw(ctx);
     }
 
-    moveToTarget(target: number, nextAction: any) {
-        const diff = target - this.x;
-
-        this.direction = diff < 0 ? "left" : "right";
-        this.x += 0.5 * (this.direction === "left" ? -1 : 1);
-        this.setAnimation("walk");
-
-        console.log(`distance ${Math.abs(this.x - target)}`)
-        if (Math.abs(this.x - target) <= 30) {
-            this.setAnimation("idle");
-            nextAction();
-        }
-    }
-
     handleAction(action: "move" | "speak" | "leave" | "death" | "attack01", target: any, nextAction: () => void) {
         if (action === "death" || action === "attack01") {
             this.setAnimation(action.toLowerCase());
-
             setTimeout(() => {
-                if (action !== "death") {
-                    this.setAnimation("idle")
-                }
+                if (action !== "death") this.setAnimation("idle");
                 nextAction();
             }, 3000);
         }
 
-        if (action === "move") {
-            if (typeof target === "number") {
-                this.moveToTarget(target, nextAction);
-            }
+        if (action === "move" && typeof target === "number") {
+            this.targetPosition = target;
+            this.nextAction = nextAction;
         }
 
         if (action === "leave") {
-            console.log('leaving')
-            if (target == "left") {
-                this.moveToTarget(-100, nextAction);
-            } else {
-                this.moveToTarget(this.canvas.width + 200, nextAction);
-            }
+            this.targetPosition = target === "left" ? -100 : this.canvas.width + 200;
+            this.nextAction = nextAction;
         }
 
         if (action === "speak" && typeof target === "string") {
-
             if (!this.speach) {
                 let name = capitalize(this.animationSet);
-
                 const variations = [
                     `"${target}" says the ${name}`,
                     `"${target}" whispers the ${name}`,
@@ -198,27 +183,19 @@ export class Character {
                 this.speach = variations[Math.floor(Math.random() * variations.length)];
                 this.speak(this.speach);
                 setTimeout(() => {
-
                     this.speach = null;
                     this.speak("");
                     nextAction();
                 }, 3000);
             }
-
         }
-    }
-
-    getFrame() {
-        return this.currentFrame;
     }
 
     draw(ctx: CanvasRenderingContext2D) {
-        if (!this.currentAnimation || !this.animations[this.currentAnimation]) {
-            return;
-        }
+        if (!this.currentAnimation || !this.animations[this.currentAnimation]) return;
 
         const animation = this.animations[this.currentAnimation];
-        if (!animation || !animation.image) return; // Ensure animation and image exist
+        if (!animation || !animation.image) return;
 
         const { image } = animation;
         const sx = Math.floor(this.currentFrame) * this.width;
@@ -235,5 +212,4 @@ export class Character {
         }
         ctx.restore();
     }
-
 }

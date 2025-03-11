@@ -9,7 +9,6 @@ import { Story } from "./Story";
 import Background from "@/components/Background";
 import { Link } from "react-router";
 import { useRecording } from "@/lib/recorder";
-import { supabase } from "@/lib/supabase";
 
 export default function StoryScreen() {
   const storyPath = useRef<any>(null);
@@ -18,6 +17,7 @@ export default function StoryScreen() {
     topic: string;
     paths?: any[];
   } | null>(null);
+  const story: string[] = [];
 
   const { stopRecording } = useRecording();
 
@@ -42,6 +42,7 @@ export default function StoryScreen() {
   function activeOption(index: number) {
     if (currentNode?.paths) {
       setCurrentNode(currentNode.paths[index]);
+      story.push(currentNode.paths[index])
       setActive(true);
     }
   }
@@ -133,6 +134,7 @@ export default function StoryScreen() {
                 nextTopic={() => {
                   setActive(false);
                 }}
+                story={story}
               />
             )}
           </motion.div>

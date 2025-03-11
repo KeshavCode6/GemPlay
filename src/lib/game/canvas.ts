@@ -13,6 +13,7 @@ export class CanvasManager {
     nextTopic: () => void;
     speak: (src: string, speech: string) => void;
     done: boolean = false;
+    activeAction: boolean = false;
 
     constructor(canvas: HTMLCanvasElement, scene: Scene, nextTopic: () => void, speak: (src: string, speech: string) => void) {
         this.canvas = canvas;
@@ -74,19 +75,24 @@ export class CanvasManager {
         if (action.actionType == "move") {
             target = this.characters.get(action.target)?.x ?? 0;
         }
-
-        actionCharacter?.handleAction(action.actionType, target, this.nextAction)
+        if (!this.activeAction && !this.done) {
+            console.log(`${actionCharacter} ${action.actionType} ${target}`)
+            actionCharacter?.handleAction(action.actionType, target, this.nextAction)
+            this.activeAction = true;
+        }
     }
 
     nextAction() {
         this.currentAction += 1
+        this.activeAction = false;
+
         if (this.currentAction >= this.scene.actions.length) {
             this.done = true;
             setTimeout(() => {
                 if (this.nextTopic) {
                     this.nextTopic();
                 }
-            }, 3000);
+            }, 5000);
         }
     }
 

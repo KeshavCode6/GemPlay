@@ -3,14 +3,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI("AIzaSyDkzJl2M3CorRI35eKDcZkIJ3X-1PkGTJc");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 const characters = [
-  // "archer",
-  // "knight",
-  // "orc",
-  // "preist",
-  // "skeleton",
-  // "slime",
-  // "soldier",
-  // "swordsman",
+  "archer",
+  "knight",
+  "orc",
+  "preist",
+  "skeleton",
+  "slime",
+  "soldier",
+  "swordsman",
   "werewolf",
   "wizard"
 ];
@@ -139,11 +139,13 @@ export async function createStoryPath() {
   return JSON.parse(response.response.text());
 }
 
-export async function createScene(curretNode: { topic: string, paths?: string[] }) {
+export async function createScene(curretNode: { topic: string, paths?: string[] }, story: string[]) {
 
   const prompt = `
   You are a helpful assistant. 
   Use the following characters: ${characters} as actors in the story.
+  
+  So far, the following as happened ${story}
   
   The scene must be about ${curretNode.topic}. Ensure that the scene makes logical sense so that
   any of the following (${curretNode.paths}) can come after it and make sense.
@@ -183,7 +185,10 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
   - Try to only include characters directly invovled in the scene. if the character has no actions in the scene, do not include them
   - Follow the JSON format exactly as specified. Respond only with valid JSON. Do not include an introduction or summary.
   - Position represents the starting point of the character. Use a percentage to determine how far right it should go on the canvas, where 0 is on the left and 1 is on the right
-    Return: Scene
+  - Before attacking, the character most move toward the other character
+  - If a character is dead in a previous scene, then do not include them in the character list
+  - EACH CHARACTER MUST BE USED SINGULARARY. ONLY ONE OF EACH CHARACTER
+  Return: Scene
   `
 
   const response = await model.generateContent({

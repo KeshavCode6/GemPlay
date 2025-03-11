@@ -10,9 +10,11 @@ import { useRecording } from "@/lib/recorder";
 export function Story({
   currentNode,
   nextTopic,
+  story
 }: {
   currentNode: { topic: string; paths?: any } | undefined | null;
   nextTopic: () => void;
+  story: string[];
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -26,7 +28,7 @@ export function Story({
 
   useEffect(() => {
     if (currentNode) {
-      createScene(currentNode).then((scene) => {
+      createScene(currentNode, story).then((scene) => {
         if (canvasRef.current) {
           const manager = new CanvasManager(
             canvasRef.current,
