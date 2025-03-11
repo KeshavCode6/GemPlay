@@ -2,16 +2,27 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI("AIzaSyDkzJl2M3CorRI35eKDcZkIJ3X-1PkGTJc");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-const characters = ["archer", "soldier"];
+const characters = [
+  // "archer",
+  // "knight",
+  // "orc",
+  // "preist",
+  // "skeleton",
+  // "slime",
+  // "soldier",
+  // "swordsman",
+  "werewolf",
+  "wizard"
+];
 const backdrops = ["lake", "castle", "cave", "village", "village2", "desert"];
-const actionTypes = ["speak", "leave", "move", "attack", "die"];
+const actionTypes = ["speak", "leave", "move", "attack01", "death"];
 const music = ["calm1", "battle1", "battle2", "calm2"];
 
 export interface Scene {
   characters: { character: string, position: string, direction: string }[],
   backdrop: string,
   msuic: string,
-  actions: { character: string, actionType: "move" | "leave" | "speak", target: string }[]
+  actions: { character: string, actionType: "move" | "leave" | "speak" | "attack01" | "death", target: string }[]
 }
 
 export function isValidScene(scene: Scene) {
@@ -80,8 +91,9 @@ export async function createStoryPath() {
       - Each topic must be a sentence, not a title 
       - Vary the amount of subpaths there are, between 2-4
       - Include at least 2 root paths
-      - For each topic, there can only be one of each character (i.e, no goblin army allowed)
-      - The characters must always be on the same backdrop
+      - For each topic, there can only be one of each character (i.e, no goblin army allowed or a solidier fighting another solider)
+      - The characters must always be on the same backdrop. (i.e, one character can't leave to another backdrop while one stays)
+      - The topics ARE NOT OPEN ENDED. PLEASE FIND A CREATIVE STORY FOR EACH ONE. DO NOT INCLUDE QUESTIONS OR QUESTION MARKS!
 
       Topics = {
         "paths": [

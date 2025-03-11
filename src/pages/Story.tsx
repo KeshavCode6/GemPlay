@@ -15,13 +15,12 @@ export function Story({
   nextTopic: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null); // Reference for background music
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [canvasManager, setCanvasManager] = useState<CanvasManager | null>(
     null
   );
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [speech, setSpeech] = useState<string>("");
-  const [volume, setVolume] = useState<number>(0.25); // Volume state (1 = 100%)
+  const [volume, setVolume] = useState<number>(0.5);
 
   const { startRecording } = useRecording();
 
@@ -77,9 +76,8 @@ export function Story({
     }
   };
 
-  const speak = (src: string, speech: string) => {
+  const speak = (speech: string) => {
     setSpeech(speech);
-    setImageSrc(src);
   };
 
   if (!currentNode) {
@@ -112,19 +110,12 @@ export function Story({
         </div>
       </div>
 
-      {/* Container for canvas and speech bubble */}
       <div className="relative w-full h-full">
         <canvas ref={canvasRef} className="w-full h-full pixelated" />
 
-        {/* Speech bubble box */}
-        {imageSrc && speech && (
-          <div className="absolute top-4 left-4 right-4 rounded-lg bg-black/[0.8] flex items-center space-x-4 p-2">
-            <img
-              src={imageSrc || "/placeholder.svg"}
-              alt="Story Image"
-              className="w-24 h-24 rounded object-cover pixelated"
-            />
-            <p className="text-white font-bold text-lg">{speech}</p>
+        {speech && (
+          <div className="absolute top-4 left-8 right-8 rounded-lg bg-black/[0.8] flex items-center space-x-4 p-4">
+            <p className="text-white w-full text-center font-bold text-lg">{speech}</p>
           </div>
         )}
       </div>

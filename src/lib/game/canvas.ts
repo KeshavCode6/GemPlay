@@ -1,5 +1,5 @@
 import { Scene } from "../ai";
-import { Character, characterMap } from "./character";
+import { Character } from "./character";
 
 export class CanvasManager {
     canvas: HTMLCanvasElement;
@@ -28,23 +28,16 @@ export class CanvasManager {
         this.nextAction = this.nextAction.bind(this);
 
         scene.characters.forEach((option) => {
-            const charKey = option.character;
-            const characterData = characterMap[charKey as keyof typeof characterMap];
-
-            if (characterData) {
-                this.characters.set(
-                    charKey,
-                    new Character(
-                        characterData,
-                        option.direction,
-                        this.canvas.width * Number(option.position),
-                        this.canvas,
-                        speak
-                    )
-                );
-            } else {
-                console.error(`Character "${charKey}" not found in characterMap.`);
-            }
+            this.characters.set(
+                option.character,
+                new Character(
+                    option.character,
+                    option.direction,
+                    this.canvas.width * Number(option.position),
+                    this.canvas,
+                    speak
+                )
+            );
         });
     }
 
@@ -87,14 +80,13 @@ export class CanvasManager {
 
     nextAction() {
         this.currentAction += 1
-
         if (this.currentAction >= this.scene.actions.length) {
             this.done = true;
             setTimeout(() => {
                 if (this.nextTopic) {
                     this.nextTopic();
                 }
-            }, 5000);
+            }, 3000);
         }
     }
 
