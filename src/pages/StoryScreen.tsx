@@ -8,7 +8,6 @@ import { useEffect, useRef, useState } from "react";
 import { Story } from "./Story";
 import Background from "@/components/Background";
 import { Link } from "react-router";
-import { useRecording } from "@/lib/recorder";
 
 export default function StoryScreen() {
   const storyPath = useRef<any>(null);
@@ -19,7 +18,6 @@ export default function StoryScreen() {
   } | null>(null);
   const story: string[] = [];
 
-  const { stopRecording } = useRecording();
 
   let run = 0;
   useEffect(() => {
@@ -116,13 +114,11 @@ export default function StoryScreen() {
                       <Button
                         variant={"destructive"}
                         className="w-full h-[4rem] text-lg text-white"
-                        onClick={() => {
-                          stopRecording();
-                        }}
                       >
                         <LogOut /> Exit
                       </Button>
                     </Link>
+
                   </div>
                 ) : (
                   <>
@@ -132,9 +128,6 @@ export default function StoryScreen() {
                       <Button
                         variant={"destructive"}
                         className="w-full h-[4rem] text-lg text-white"
-                        onClick={() => {
-                          stopRecording();
-                        }}
                       >
                         <LogOut /> Go Back
                       </Button>

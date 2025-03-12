@@ -5,7 +5,6 @@ import { createSceneWithRetry } from "@/lib/ai";
 import { ChevronRight, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CanvasManager } from "@/lib/game/canvas";
-import { useRecording } from "@/lib/recorder";
 import { AnimatePresence, motion } from "framer-motion";
 
 export function Story({
@@ -24,9 +23,8 @@ export function Story({
   // State management
   const [canvasManager, setCanvasManager] = useState<CanvasManager | null>(null);
   const [speech, setSpeech] = useState<string>("");
-  const [volume, setVolume] = useState<number>(0);
+  const [volume, setVolume] = useState<number>(0.5);
 
-  const { startRecording } = useRecording();
 
   useEffect(() => {
     if (currentNode) {
@@ -60,10 +58,6 @@ export function Story({
       });
     }
 
-    // Start recording gameplay if canvas and audio exist
-    if (canvasRef.current && audioRef.current) {
-      startRecording(canvasRef.current, audioRef.current);
-    }
 
     // Cleanup function to stop canvas and audio on unmount
     return () => {

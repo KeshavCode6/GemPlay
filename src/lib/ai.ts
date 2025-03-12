@@ -177,6 +177,7 @@ export async function createStoryPath() {
     - **Do not repeat the same path structure across different branches.**
     - **Start with exactly 2 ROOT PATHS**
     - **Do not use the backdrop names word for word**
+    - Make subpaths related to the previous path directly.
   
   Use this **exact JSON format** and do not deviate:
   
@@ -250,7 +251,6 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
       }
         ....
     ],
-    "summary": "A quick summary of every action in the scene"
     "backdrop": "The backdrop of the scene. You can choose from ${backdrops}",
     "music": "The music of the scene. You can choose from ${music}. Please try to be random with this",
     "actions": [

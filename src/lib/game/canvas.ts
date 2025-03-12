@@ -1,44 +1,51 @@
 import { Scene } from "../ai";
 import { Character } from "./character";
 
-// Object to manage the game canvas
+// Global storage for all recorded snippets across instances
+const recordedSnippets: Blob[] = [];
+
 export class CanvasManager {
-    // rendering constants
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D | null;
     animationFrameId: number | null = null;
 
-    // ai generated scene info
+    // AI-generated scene info
     scene: Scene;
-    background: HTMLImageElement; // backdrop of the scene
-    characters: Map<string, Character> = new Map(); // all involved characters
+    background: HTMLImageElement;
+    characters: Map<string, Character> = new Map();
 
-    // utility
+    // Utility
     lastTime: number = 0;
     currentAction: number = 0;
-    nextTopic: () => void; // function to move onto the next story path
-    speak: (src: string, speech: string) => void; // the function to allow a character to speak
-    done: boolean = false; // is the story done?
+    nextTopic: () => void;
+    speak: (src: string, speech: string) => void;
+    done: boolean = false;
     activeAction: boolean = false;
 
-    constructor(canvas: HTMLCanvasElement, scene: Scene, nextTopic: () => void, speak: (src: string, speech: string) => void) {
-        // setting up constants
+    // Recording setup
+    mediaRecorder: MediaRecorder | null = null;
+    recordedChunks: Blob[] = [];
+
+    constructor(
+        canvas: HTMLCanvasElement,
+        scene: Scene,
+        nextTopic: () => void,
+        speak: (src: string, speech: string) => void
+    ) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
 
-        // allowing pixel art to properly be rendered
         this.ctx!.imageSmoothingEnabled = true;
         this.ctx!.imageSmoothingQuality = "low";
         this.nextTopic = nextTopic;
         this.speak = speak;
         this.scene = scene;
 
-        // setting up the backdrop
         this.background = new Image();
         this.background.src = `/backdrops/${this.scene.backdrop}.png`;
         this.nextAction = this.nextAction.bind(this);
 
-        // initializing all the characters
+        // Initialize all characters
         scene.characters.forEach((option) => {
             this.characters.set(
                 option.character,
@@ -51,13 +58,84 @@ export class CanvasManager {
                 )
             );
         });
+
+        // Setup recording
+        this.setupRecording();
+    }
+
+    addClip() {
+        console.log("Recording stopped, storing snippet...");
+
+        // Ensure data is properly captured before finalizing
+        if (this.mediaRecorder?.state !== "inactive") {
+            this.mediaRecorder?.requestData();
+        }
+
+        // Store snippet globally
+        const blob = new Blob(this.recordedChunks, { type: "video/webm;codecs=vp8" });
+        recordedSnippets.push(blob);
+        console.log(recordedSnippets)
+        console.log(`Stored snippet ${recordedSnippets.length} in global memory.`);
+    }
+    // Initialize the MediaRecorder
+    setupRecording() {
+        try {
+            const stream = this.canvas.captureStream(30); // 30 FPS
+            this.mediaRecorder = new MediaRecorder(stream, {
+                mimeType: "video/webm;codecs=vp8", // Use vp8 for broader browser support
+            });
+
+            this.mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    console.log("Data available:", event.data);
+                    this.recordedChunks.push(event.data);
+                }
+            };
+
+            this.mediaRecorder.onstop = this.addClip;
+
+            this.mediaRecorder.onerror = (event) => {
+                console.error("MediaRecorder error:", event);
+            };
+
+            console.log("MediaRecorder initialized successfully.");
+        } catch (error) {
+            console.error("Error setting up recording:", error);
+        }
+    }
+
+    startRecording() {
+        if (!this.mediaRecorder) {
+            console.error("MediaRecorder is not initialized!");
+            return;
+        }
+        if (this.mediaRecorder.state === "inactive") {
+            this.recordedChunks = []; // Reset chunks
+            this.mediaRecorder.start(1000); // Request data every 1 second
+            console.log("Recording started...");
+        }
+    }
+
+    stopRecording(): Promise<void> {
+        return new Promise((resolve) => {
+            if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
+                console.log("Stopping recording...");
+                this.mediaRecorder.requestData(); // Force final data save
+                this.mediaRecorder.onstop = () => {
+                    console.log("Recording stopped, storing snippet...");
+                    this.addClip();
+                    resolve();
+                };
+                this.mediaRecorder.stop();
+            } else {
+                resolve();
+            }
+        });
     }
 
     draw() {
-        // resetting the screen
         this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // drawing the backdrop
         if (this.background.complete) {
             this.ctx?.drawImage(this.background, 0, 0, this.canvas.width, this.canvas.height);
         } else {
@@ -67,72 +145,88 @@ export class CanvasManager {
         }
     }
 
-    // main update loop
     update(currentTime: number) {
-        // delate time to ensure consitent speed
-        const deltaTime = (currentTime - this.lastTime) / 1000; // Convert to seconds
-        this.lastTime = currentTime; // Update last frame time
+        const deltaTime = (currentTime - this.lastTime) / 1000;
+        this.lastTime = currentTime;
 
-        // drawing the bacldrop
         this.draw();
 
-        // updating each character
         this.animationFrameId = requestAnimationFrame((time) => this.update(time));
         for (const character of this.characters.values()) {
             if (!this.ctx) return;
             character.update(this.ctx, deltaTime);
         }
 
-        // going through all the actions
+        if (this.done) return;
 
-        // stopping if we are done
-        if (this.done) { return; }
-
-        // what will happen next in the story
         const action = this.scene.actions[this.currentAction];
-        const actionCharacter = this.characters.get(action.character)
+        const actionCharacter = this.characters.get(action.character);
         let target: any = action.target;
 
-        // if the character is moving, get the x position of the character they are going to
         if (action.actionType == "move") {
             target = this.characters.get(action.target)?.x ?? 0;
         }
 
-        // starting the action
         if (!this.activeAction && !this.done) {
-            console.log(`${actionCharacter} ${action.actionType} ${target}`)
-            actionCharacter?.handleAction(action.actionType, target, this.nextAction)
-            this.activeAction = true; // ensuring the action is only started once
+            console.log(`${actionCharacter} ${action.actionType} ${target}`);
+            actionCharacter?.handleAction(action.actionType, target, this.nextAction);
+            this.activeAction = true;
         }
     }
 
-    // a function to move onto the next action
-    nextAction() {
-        this.currentAction += 1
+    async nextAction() {
+        this.currentAction += 1;
         this.activeAction = false;
 
-        // if all actions have been completed, finish
-        if (this.currentAction >= this.scene.actions.length) {
+        if (this.currentAction == this.scene.actions.length) {
             this.done = true;
-
-            // pausing for 3 seconds before moving on
+            await this.stopRecording();
             setTimeout(() => {
                 if (this.nextTopic) {
                     this.nextTopic();
                 }
-            }, 3000);
+            }, 2000);
         }
     }
 
-    // used for delatime
-    start() {
+    async start() {
         this.lastTime = performance.now();
         this.update(this.lastTime);
+
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+        this.startRecording();
     }
 
     stop() {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }
+        this.stopRecording();
     }
+}
+
+// Function to merge and download all recorded snippets
+export function downloadFinalRecording() {
+    if (recordedSnippets.length === 0) {
+        console.warn("No video snippets recorded.");
+        return;
+    }
+
+    console.log("Merging all video snippets...");
+
+    // Merge all recorded snippets into one Blob
+    const finalBlob = new Blob(recordedSnippets, { type: "video/webm;codecs=vp8" });
+
+    console.log("Final video ready for download.");
+
+    // Trigger the download
+    const url = URL.createObjectURL(finalBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "canvas-final-recording.webm";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    console.log("Download triggered.");
 }
