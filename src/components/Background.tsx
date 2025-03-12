@@ -1,4 +1,4 @@
-
+// The assortment of chess pieces in the background
 export default function Background() {
     return (
         <img

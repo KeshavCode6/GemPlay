@@ -3,28 +3,45 @@ function capitalize(str: string) {
 }
 
 export class Character {
+    // Stores different animations with their corresponding images and frame counts
     animations: { [key: string]: { image: HTMLImageElement, frameCount: number } } = {};
-    currentAnimation: string = "";
-    animationSet: string;
+    currentAnimation: string = ""; // Tracks the current animation
+    animationSet: string; // The character's animation set (e.g., knight, mage)
+
+    // Position and size properties
     x: number = 0;
     y: number = 0;
     width: number = 100;
     height: number = 100;
+
+    // Sprite positioning offsets
     spriteOffsetX: number = 50;
     spriteOffsetY: number = 70;
     spriteWidth: number = 30;
     spriteHeight: number = 30;
+
+    // Animation control properties
     currentFrame: number = 0;
     frameSpeed: number;
     frameTimer: number;
+
+    // Movement properties
     direction: string = "right";
     speed: number = 2;
+    targetPosition: number | null = null; // Stores movement target
+
+    // Speech properties
     speach: string | null = "";
     speak: any;
+
+    // Canvas reference for rendering
     canvas: HTMLCanvasElement;
+
+    // Flags to ensure animations are loaded before being used
     animationsLoaded: boolean = false;
     frameSpacing: number = 2;
-    targetPosition: number | null = null; // Stores movement target
+
+    // Callback function for the next action after completing a task
     nextAction: any;
 
     constructor(character: string, direction: string, x: number, canvas: HTMLCanvasElement, speak: any) {
@@ -32,20 +49,25 @@ export class Character {
         this.canvas = canvas;
         this.direction = direction;
         this.speak = speak;
-        this.animations = {};
+
         this.currentFrame = 0;
         this.frameSpeed = 0.1;
         this.frameTimer = 0;
 
+        // Set initial position
         this.setPosition(x, canvas.height - this.height);
+
+        // Load character animations
         this.loadAnimations();
     }
 
+    // Set character position with sprite offsets applied
     setPosition(x: number, y: number) {
         this.x = x - this.spriteOffsetX / 2;
         this.y = y + this.spriteOffsetY / 2;
     }
 
+    // Load animations asynchronously
     async loadAnimations() {
         let animations = ["idle", "walk", "death", "attack01"];
         try {
@@ -78,6 +100,7 @@ export class Character {
         }
     }
 
+    // Set the character's current animation
     setAnimation(animation: string) {
         console.log(`Attempting to set animation: ${animation}`);
         const capitalizedAnim = capitalize(animation);
@@ -100,28 +123,34 @@ export class Character {
         }
     }
 
+    // Stops the character's movement and resets animation to idle
     stop() {
         this.setAnimation("idle");
     }
 
+    // Update function to handle animation frames and movement
     update(ctx: CanvasRenderingContext2D, deltaTime: number) {
         if (!this.animations[this.currentAnimation]) return;
 
         this.frameTimer += deltaTime;
 
+        // Handle animation frame progression
         if (this.frameTimer >= this.frameSpeed) {
             this.frameTimer = 0;
-
-            if (!(this.currentAnimation == "death" && this.currentFrame == this.animations[this.currentAnimation].frameCount)) {
+            if (this.currentAnimation === "Death" || this.currentAnimation === "Attack01") {
+                if (this.currentFrame < this.animations[this.currentAnimation].frameCount - 1) {
+                    this.currentFrame++;
+                }
+            } else {
                 this.currentFrame = (this.currentFrame + 1) % this.animations[this.currentAnimation].frameCount;
             }
         }
 
-        // Move towards target position if set
+        // Handle character movement towards target position
         if (this.targetPosition !== null) {
             const diff = this.targetPosition - this.x;
             this.direction = diff < 0 ? "left" : "right";
-            this.x += this.speed * (this.direction === "left" ? -0.25 : .25);
+            this.x += this.speed * (this.direction === "left" ? -0.25 : 0.25);
             this.setAnimation("walk");
 
             if (Math.abs(this.x - this.targetPosition) <= 35) {
@@ -135,80 +164,38 @@ export class Character {
         this.draw(ctx);
     }
 
+    // Handles different character actions such as movement, speaking, leaving, and combat
     handleAction(action: "move" | "speak" | "leave" | "death" | "attack01", target: any, nextAction: () => void) {
-        if (action === "death" || action === "attack01") {
-            this.setAnimation(action.toLowerCase());
-            setTimeout(() => {
-                if (action !== "death") this.setAnimation("idle");
-                nextAction();
-            }, 3000);
-        }
-
         if (action === "move" && typeof target === "number") {
             this.targetPosition = target;
             this.nextAction = nextAction;
         }
-
         if (action === "leave") {
             this.targetPosition = target === "left" ? -100 : this.canvas.width + 200;
             this.nextAction = nextAction;
         }
-
         if (action === "speak" && typeof target === "string") {
-            if (!this.speach) {
-                let name = capitalize(this.animationSet);
-                const variations = [
-                    `"${target}" says the ${name}`,
-                    `"${target}" whispers the ${name}`,
-                    `"${target}" exclaims the ${name}`,
-                    `"${target}" yells the ${name}`,
-                    `"${target}" murmurs the ${name}`,
-                    `"${target}" mutters the ${name}`,
-                    `"${target}" shouts the ${name}`,
-                    `"${target}" cries out the ${name}`,
-                    `"${target}" announces the ${name}`,
-                    `"${target}" proclaims the ${name}`,
-                    `"${target}" states the ${name}`,
-                    `"${target}" declares the ${name}`,
-                    `"${target}" growls the ${name}`,
-                    `"${target}" hisses the ${name}`,
-                    `"${target}" grumbles the ${name}`,
-                    `"${target}" snickers the ${name}`,
-                    `"${target}" chuckles the ${name}`,
-                    `"${target}" sneers the ${name}`,
-                    `"${target}" laughs the ${name}`,
-                    `"${target}" utters the ${name}`
-                ];
-
-                this.speach = variations[Math.floor(Math.random() * variations.length)];
-                this.speak(this.speach);
-                setTimeout(() => {
-                    this.speach = null;
-                    this.speak("");
-                    nextAction();
-                }, 3000);
-            }
+            this.speach = `"${target}" says the ${capitalize(this.animationSet)}`;
+            this.speak(this.speach);
+            setTimeout(() => {
+                this.speach = null;
+                this.speak("");
+                nextAction();
+            }, 3500);
         }
     }
 
+    // Draws the character on the canvas
     draw(ctx: CanvasRenderingContext2D) {
         if (!this.currentAnimation || !this.animations[this.currentAnimation]) return;
-
-        const animation = this.animations[this.currentAnimation];
-        if (!animation || !animation.image) return;
-
-        const { image } = animation;
+        const { image } = this.animations[this.currentAnimation];
         const sx = Math.floor(this.currentFrame) * this.width;
-        const sy = 0;
-        const sw = this.width;
-        const sh = this.height;
-
         ctx.save();
         if (this.direction === "left") {
             ctx.scale(-1, 1);
-            ctx.drawImage(image, sx, sy, sw, sh, -Math.round(this.x) - this.width, this.y, this.width, this.height);
+            ctx.drawImage(image, sx, 0, this.width, this.height, -Math.round(this.x) - this.width, this.y, this.width, this.height);
         } else {
-            ctx.drawImage(image, sx, sy, sw, sh, Math.round(this.x), this.y, this.width, this.height);
+            ctx.drawImage(image, sx, 0, this.width, this.height, Math.round(this.x), this.y, this.width, this.height);
         }
         ctx.restore();
     }

@@ -16,20 +16,26 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Hook to navigate between pages
+
+  // Function to handle user login
   async function signIn(e: React.SyntheticEvent<HTMLFormElement>) {
-    e.preventDefault();
+    e.preventDefault(); // Prevent default form submission
     const form = e.currentTarget;
     const formElements = form.elements as typeof form.elements & {
       email: { value: string };
       password: { value: string };
     };
+
+    // Signing in user with Supabase authentication
     await supabase.auth.signInWithPassword({
       email: formElements.email.value,
       password: formElements.password.value,
     });
-    navigate("/");
+
+    navigate("/"); // Redirect to home page after successful login
   }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -42,6 +48,7 @@ export function LoginForm({
         <CardContent>
           <form onSubmit={signIn}>
             <div className="flex flex-col gap-6">
+              {/* Email Input Field */}
               <div className="grid gap-3">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -51,6 +58,8 @@ export function LoginForm({
                   required
                 />
               </div>
+
+              {/* Password Input Field */}
               <div className="grid gap-3">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
@@ -63,12 +72,16 @@ export function LoginForm({
                 </div>
                 <Input id="password" type="password" required />
               </div>
+
+              {/* Submit Button */}
               <div className="flex flex-col gap-3">
                 <Button type="submit" className="w-full">
                   Login
                 </Button>
               </div>
             </div>
+
+            {/* Sign-up Link */}
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
               <Link to="/signup" className="underline underline-offset-4">

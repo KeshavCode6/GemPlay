@@ -33,29 +33,32 @@ export default function HelpScreen() {
     ])
     const [inputMessage, setInputMessage] = useState("")
 
+    // Function to handle message submission
     const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault()
+        e.preventDefault() // Prevent default form submission behavior
 
-        if (!inputMessage.trim()) return
+        if (!inputMessage.trim()) return // Prevent empty messages
 
+        // Creating a new user message
         const userMessage: Message = {
             id: Date.now().toString(),
             content: inputMessage,
             sender: "user",
         }
 
-        const response = await askQuestion(inputMessage);
+        const response = await askQuestion(inputMessage) // Fetch AI-generated response
 
-        setMessages((prev) => [...prev, userMessage])
-        setInputMessage("")
+        setMessages((prev) => [...prev, userMessage]) // Add user message to state
+        setInputMessage("") // Clear input field
 
+        // Simulating bot response delay
         setTimeout(() => {
             const botMessage: Message = {
                 id: (Date.now() + 1).toString(),
                 content: response,
                 sender: "bot",
             }
-            setMessages((prev) => [...prev, botMessage])
+            setMessages((prev) => [...prev, botMessage]) // Add bot response to state
         }, 1000)
     }
 
@@ -83,16 +86,18 @@ export default function HelpScreen() {
                 className="flex-grow w-full h-full flex justify-center items-center z-50">
                 <Card className="w-full h-full max-w-[50%] flex flex-col" style={{ aspectRatio: "5/4" }}>
                     <CardHeader className="border-b pb-4">
-                        <CardTitle className="text-xl flex gap-2">GemPlay Assistant <HelpingHand /> </CardTitle>
+                        <CardTitle className="text-xl flex gap-2">
+                            GemPlay Assistant <HelpingHand />
+                        </CardTitle>
                     </CardHeader>
 
+                    {/* Scrollable chat area */}
                     <ScrollArea className="flex-1 p-4 max-h-[75%]">
                         <div className="space-y-4">
                             {messages.map((message) => (
-                                <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end " : "justify-start"}`}>
+                                <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
                                     <div
-                                        className={`max-w-[80%] rounded-lg px-4 py-2 ${message.sender === "user" ? "bg-primary text-white" : "bg-muted"
-                                            }`}
+                                        className={`max-w-[80%] rounded-lg px-4 py-2 ${message.sender === "user" ? "bg-primary text-white" : "bg-muted"}`}
                                     >
                                         <p>{message.content}</p>
                                     </div>
@@ -101,6 +106,7 @@ export default function HelpScreen() {
                         </div>
                     </ScrollArea>
 
+                    {/* Message input field and send button */}
                     <CardFooter className="border-t p-4">
                         <form onSubmit={handleSendMessage} className="flex w-full gap-2">
                             <Input
@@ -109,7 +115,7 @@ export default function HelpScreen() {
                                 placeholder="Type your message..."
                                 className="flex-1"
                             />
-                            <Button type="submit" size="icon" className=" text-white">
+                            <Button type="submit" size="icon" className="text-white">
                                 <Send className="h-4 w-4" />
                             </Button>
                         </form>
@@ -119,4 +125,3 @@ export default function HelpScreen() {
         </motion.div>
     )
 }
-

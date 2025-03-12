@@ -1,7 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// setting up gemini
 const genAI = new GoogleGenerativeAI("AIzaSyDkzJl2M3CorRI35eKDcZkIJ3X-1PkGTJc");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// story related variables (i.e, what characters, music, backdrops are available)
 const characters = [
   "archer",
   "knight",
@@ -18,34 +21,106 @@ const backdrops = ["lake", "castle", "cave", "village", "village2", "desert"];
 const actionTypes = ["speak", "leave", "move", "attack01", "death"];
 const music = ["calm1", "battle1", "battle2", "calm2"];
 
+
+// this is the data type of the scene 
 export interface Scene {
-  characters: { character: string, position: string, direction: string }[],
+  characters: { character: string, position: number, direction: "left" | "right" }[],
   backdrop: string,
-  msuic: string,
+  music: string,
   actions: { character: string, actionType: "move" | "leave" | "speak" | "attack01" | "death", target: string }[]
 }
 
+// checking if the ai created the scene with all attributes
 export function isValidScene(scene: Scene) {
-  if (typeof scene !== 'object' || scene === null) return false;
+  if (typeof scene !== 'object' || scene === null) {
+    console.error("Invalid scene: Scene is not an object or is null");
+    return false;
+  }
 
-  if (!Array.isArray(scene.characters) || !scene.characters.every(c =>
-    typeof c.character === 'string' && characters.includes(c.character) &&
-    typeof c.position === 'number')) return false;
+  if (!Array.isArray(scene.characters)) {
+    console.error("Invalid scene: 'characters' is not an array");
+    return false;
+  }
 
-  if (typeof scene.backdrop !== 'string' || !backdrops.includes(scene.backdrop)) return false;
+  for (const c of scene.characters) {
+    if (typeof c.character !== 'string' || !characters.includes(c.character)) {
+      console.error("Invalid character:", c);
+      return false;
+    }
+    if (typeof c.position !== 'number' || c.position < 0 || c.position > 1) {
+      console.error("Invalid character position:", c);
+      return false;
+    }
+    if (c.direction !== "left" && c.direction !== "right") {
+      console.error("Invalid character direction:", c);
+      return false;
+    }
+  }
 
-  if (typeof scene.msuic !== 'string' || !music.includes(scene.msuic)) return false;
+  if (typeof scene.backdrop !== 'string' || !backdrops.includes(scene.backdrop)) {
+    console.error("Invalid backdrop:", scene.backdrop);
+    return false;
+  }
 
-  if (!Array.isArray(scene.actions) || !scene.actions.every(a =>
-    typeof a.character === 'string' && characters.includes(a.character) &&
-    typeof a.actionType === 'string' && actionTypes.includes(a.actionType) &&
-    typeof a.target === 'string')) return false;
+  if (typeof scene.music !== 'string' || !music.includes(scene.music)) {
+    console.error("Invalid music:", scene.music);
+    return false;
+  }
+
+  if (!Array.isArray(scene.actions)) {
+    console.error("Invalid scene: 'actions' is not an array");
+    return false;
+  }
+
+  for (const a of scene.actions) {
+    if (typeof a.character !== 'string' || !characters.includes(a.character)) {
+      console.error("Invalid action character:", a);
+      return false;
+    }
+    if (typeof a.actionType !== 'string' || !actionTypes.includes(a.actionType)) {
+      console.error("Invalid action type:", a);
+      return false;
+    }
+    if (typeof a.target !== 'string') {
+      console.error("Invalid action target:", a);
+      return false;
+    }
+  }
 
   return true;
 }
 
+// running the create scene function 3 times in order to compensate for inconsistency with the ai
+export async function createSceneWithRetry(currentNode: { topic: string, paths?: string[] }, story: string[], retries = 3) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await createScene(currentNode, story);
 
+      // only returning the scene if it is valid
+      if (isValidScene(response)) return response;
+    } catch (error) {
+      console.error(`Attempt ${attempt + 1} failed:`, error);
+    }
+  }
+  throw new Error("Failed to generate a valid scene after multiple attempts.");
+}
+
+// creating a story path, again with multiple tries
+export async function createStoryPathWithRetry(retries = 3) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const response = await createStoryPath();
+      return response;
+    } catch (error) {
+      console.error(`Attempt ${attempt + 1} failed:`, error);
+    }
+  }
+  throw new Error("Failed to generate a valid story path after multiple attempts.");
+}
+
+// used for the help page chatpot
 export async function askQuestion(question: string): Promise<string> {
+  // basic prompt with general information on GemPlay
   const prompt = `
       You are a helpful assistant for an organization called GemPlay. 
   
@@ -70,85 +145,99 @@ export async function askQuestion(question: string): Promise<string> {
       REFUSE TO ANSWER IF IT IS NOT ABOUT GEM PLAY
     `;
 
+
+  // returning what the ai gives
   const response = await model.generateContent(prompt);
   return response.response.text();
 }
 
+// creating the multiple story paths
 export async function createStoryPath() {
-
+  /* 
+    Extremely detailed prompt. Ensures that only valid characters, backdrops, music, etc. is used
+    Created 2 root paths, and 3 subpaths underneath each one
+  */
   const prompt = `
-    Generate a structured JSON story path with three choices at each level, maintaining a nested hierarchy.
-    The JSON format must strictly follow this structure:
-
-      - Each topic must involve **at least two** of the provided characters: ${characters}.  
-      - Each topic must take place within the given backdrops: ${backdrops}.  
-      - **Only use the listed characters**—do not introduce or reference any other entities (e.g., if "dragon" is not in ${characters}, it cannot be mentioned).  
-      - The story topics must be **logically feasible** within the provided backdrops.  
-      - The topics must be **achievable using only the following actions**: ${actionTypes}.  
-      - Generate **NEW, UNIQUE** and creative topics that do not copy the examples below. Try to not directly use the action in the topic, have it implied instead.
-      - Tie each topic directly to a backdrop  
-      - Make each path build off the last node to build a cohesive story in which the user can pick what happens
-      - Each topic must be a sentence, not a title 
-      - Vary the amount of subpaths there are, between 2-4
-      - Include at least 2 root paths
-      - For each topic, there can only be one of each character (i.e, no goblin army allowed or a solidier fighting another solider)
-      - The characters must always be on the same backdrop. (i.e, one character can't leave to another backdrop while one stays)
-      - The topics ARE NOT OPEN ENDED. PLEASE FIND A CREATIVE STORY FOR EACH ONE. DO NOT INCLUDE QUESTIONS OR QUESTION MARKS!
-
-      Topics = {
+  Generate a structured JSON story path with three choices at each level, maintaining a nested hierarchy.
+  
+  Strictly adhere to the following rules:
+  - **Use only the following characters:** ${characters}. Do not introduce or reference any unlisted entities (e.g., if "dragon" is not in ${characters}, it cannot be mentioned).
+  - **Use only the following backdrops:** ${backdrops}. Do not mention locations outside this list.
+  - **Only use these actions:** ${actionTypes}. Avoid any verbs or actions outside this set.
+  - Each topic must:
+    - **Involve exactly two characters** from the list.
+    - **Take place in exactly one backdrop** from the list.
+    - **Not include more than one of the same character** in a scene.
+    - **Be logically feasible** based on the backdrop and actions.
+    - **Avoid open-ended topics or questions.** Each topic must be a statement leading to a logical choice.
+    - **Avoid self-referencing, time travel, or supernatural explanations unless the provided characters support it.**
+    - **Ensure every path builds on the last node, making a cohesive, continuous story.**
+    - **Vary the number of subpaths between 2-4.**
+    - **Ensure paths never contradict each other.** 
+    - **Do not repeat the same path structure across different branches.**
+    - **Start with exactly 2 ROOT PATHS**
+    - **Do not use the backdrop names word for word**
+  
+  Use this **exact JSON format** and do not deviate:
+  
+  \`\`\`json
+  {
+    "paths": [
+      {
+        "topic": "Root Path Name",
         "paths": [
           {
-            "topic": "Root Path Name",
+            "topic": "Sub Path 1",
             "paths": [
               {
-                "topic": "Sub Path 1",
+                "topic": "Sub Path 1.1",
                 "paths": [
-                  {
-                    "topic": "Sub Path 1.1",
-                    "paths": [
-                      { "topic": "Sub Path 1.1.1" },
-                      { "topic": "Sub Path 1.1.2" }
-                    ]
-                  },
-                  {
-                    "topic": "Sub Path 1.2",
-                    "paths": [
-                      { "topic": "Sub Path 1.2.1" },
-                      { "topic": "Sub Path 1.2.2" }
-                    ]
-                  }
+                  { "topic": "Sub Path 1.1.1" },
+                  { "topic": "Sub Path 1.1.2" }
+                ]
+              },
+              {
+                "topic": "Sub Path 1.2",
+                "paths": [
+                  { "topic": "Sub Path 1.2.1" },
+                  { "topic": "Sub Path 1.2.2" }
                 ]
               }
             ]
           }
-              .....
         ]
-      }
-
-    Return Topics
+      },
+      ...
+    ]
+  }
+  \`\`\`
+  
+  Return the JSON object without any introduction, summary, or explanation.
   `;
 
+  // ensuring the ai responds with JSON
   const response = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: { responseMimeType: "application/json" }
   });
 
-
-  console.log(response.response.text())
-
+  console.log(response.response.text());
   return JSON.parse(response.response.text());
 }
 
+// creating what actually happens in the scene
 export async function createScene(curretNode: { topic: string, paths?: string[] }, story: string[]) {
-
+  /*
+    Using a detailed prompt to ensure characters properly conduct actions
+  */
   const prompt = `
   You are a helpful assistant. 
   Use the following characters: ${characters} as actors in the story.
   
   So far, the following as happened ${story}
-  
+
   The scene must be about ${curretNode.topic}. Ensure that the scene makes logical sense so that
-  any of the following (${curretNode.paths}) can come after it and make sense.
+  any of the following (${curretNode.paths}) can come after it and make sense (i.e, a character can not die if they are needed in the next paths)
 
 
   The JSON must strictly adhere to the following format:
@@ -161,6 +250,7 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
       }
         ....
     ],
+    "summary": "A quick summary of every action in the scene"
     "backdrop": "The backdrop of the scene. You can choose from ${backdrops}",
     "music": "The music of the scene. You can choose from ${music}. Please try to be random with this",
     "actions": [
@@ -172,7 +262,6 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
         ....
     ]
   }
-
   
   Ensure the following:
   - All provided characters are included at least once in the story.
@@ -191,6 +280,7 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
   Return: Scene
   `
 
+  // again ensuring JSON format
   const response = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: { responseMimeType: "application/json" }
@@ -199,5 +289,3 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
   console.log(response.response.text())
   return JSON.parse(response.response.text());
 }
-
-

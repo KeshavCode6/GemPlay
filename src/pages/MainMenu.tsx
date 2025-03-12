@@ -3,7 +3,7 @@ import { StoryCard } from "@/components/StoryCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
-import { Cog, Gem, HelpCircle, Plus, UserIcon } from "lucide-react";
+import { Gem, HelpCircle, Plus, UserIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 
@@ -11,6 +11,7 @@ export default function MainMenu() {
   const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
 
+  // Fetch user session on component mount and listen for authentication changes
   useEffect(() => {
     supabase.auth
       .getSession()
@@ -24,6 +25,8 @@ export default function MainMenu() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Example recent stories
   const recentStories = [
     {
       title: "The Lost Kingdom",
@@ -37,11 +40,13 @@ export default function MainMenu() {
     },
   ];
 
+  // Logout function
   async function logout() {
     await supabase.auth.signOut();
     navigate("/");
   }
 
+  // Determines whether to show a login or logout button based on session state
   function topButton() {
     if (!session) {
       return (
@@ -66,16 +71,20 @@ export default function MainMenu() {
 
   return (
     <div className="h-screen relative bg-amber-50 flex flex-col items-center p-4 md:p-8">
-      <Background />
+      <Background /> {/* Background component */}
+
+      {/* Header Section */}
       <header className="w-full max-w-4xl flex items-center justify-between mt-12 mb-8 z-50">
         <div className="flex items-center gap-2 ">
           <Gem className="h-8 w-8 text-primary" />
           <h1 className="text-2xl font-bold ">GemPlay</h1>
         </div>
-        {topButton()}
+        {topButton()} {/* Dynamic login/logout button */}
       </header>
 
+      {/* Main Content */}
       <main className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center gap-8 mt-24 z-50">
+        {/* Welcome Section */}
         <div className="text-center mb-6">
           <h2 className="text-3xl md:text-4xl font-bold mb-2">
             Welcome to{" "}
@@ -84,8 +93,7 @@ export default function MainMenu() {
             </span>
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Unleash your creativity and craft amazing stories with our intuitive
-            tools.
+            Unleash your creativity and craft amazing stories with our intuitive tools.
           </p>
         </div>
 
@@ -98,21 +106,8 @@ export default function MainMenu() {
               style={{ padding: "0 3rem" }}
             >
               <>
-                <Cog className="h-5 w-5" />
-                Settings
-              </>
-            </Button>
-          </Link>
-
-          <Link to="/create">
-            <Button
-              className="h-16 text-lg gap-2 rounded-full shadow-lg hover:shadow-xl transition-all text-white"
-              size="lg"
-              style={{ padding: "0 3rem" }}
-            >
-              <>
                 <Plus className="h-5 w-5" />
-                Create Story
+                Create
               </>
             </Button>
           </Link>
@@ -130,6 +125,7 @@ export default function MainMenu() {
           </Link>
         </div>
 
+        {/* Recent Stories Section */}
         <div className="w-full mt-8">
           <h3 className="text-xl font-semibold mb-4">Recent Stories</h3>
           {recentStories.length > 0 ? (

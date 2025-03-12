@@ -1,7 +1,7 @@
 import Loading from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { createStoryPath } from "@/lib/ai";
+import { createStoryPathWithRetry } from "@/lib/ai";
 import { motion, AnimatePresence } from "framer-motion";
 import { LogOut } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -29,7 +29,7 @@ export default function StoryScreen() {
     async function getTopics() {
       if (storyPath.current) return;
 
-      const t = await createStoryPath();
+      const t = await createStoryPathWithRetry();
       storyPath.current = t;
       setCurrentNode(t);
     }
@@ -125,7 +125,22 @@ export default function StoryScreen() {
                     </Link>
                   </div>
                 ) : (
-                  <Loading />
+                  <>
+
+                    <Loading />
+                    <Link to={"/"}>
+                      <Button
+                        variant={"destructive"}
+                        className="w-full h-[4rem] text-lg text-white"
+                        onClick={() => {
+                          stopRecording();
+                        }}
+                      >
+                        <LogOut /> Go Back
+                      </Button>
+                    </Link>
+                  </>
+
                 )}
               </Card>
             ) : (
