@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // setting up gemini
-const genAI = new GoogleGenerativeAI("AIzaSyDkzJl2M3CorRI35eKDcZkIJ3X-1PkGTJc");
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // story related variables (i.e, what characters, music, backdrops are available)
@@ -14,24 +14,31 @@ const characters = [
   "soldier",
   "swordsman",
   "werewolf",
-  "wizard"
+  "wizard",
 ];
 const backdrops = ["lake", "castle", "cave", "village", "village2", "desert"];
 const actionTypes = ["speak", "leave", "move", "attack01", "death"];
 const music = ["calm1", "battle1", "battle2", "calm2"];
 
-
-// this is the data type of the scene 
+// this is the data type of the scene
 export interface Scene {
-  characters: { character: string, position: number, direction: "left" | "right" }[],
-  backdrop: string,
-  music: string,
-  actions: { character: string, actionType: "move" | "leave" | "speak" | "attack01" | "death", target: string }[]
+  characters: {
+    character: string;
+    position: number;
+    direction: "left" | "right";
+  }[];
+  backdrop: string;
+  music: string;
+  actions: {
+    character: string;
+    actionType: "move" | "leave" | "speak" | "attack01" | "death";
+    target: string;
+  }[];
 }
 
 // checking if the ai created the scene with all attributes
 export function isValidScene(scene: Scene) {
-  if (typeof scene !== 'object' || scene === null) {
+  if (typeof scene !== "object" || scene === null) {
     console.error("Invalid scene: Scene is not an object or is null");
     return false;
   }
@@ -42,11 +49,11 @@ export function isValidScene(scene: Scene) {
   }
 
   for (const c of scene.characters) {
-    if (typeof c.character !== 'string' || !characters.includes(c.character)) {
+    if (typeof c.character !== "string" || !characters.includes(c.character)) {
       console.error("Invalid character:", c);
       return false;
     }
-    if (typeof c.position !== 'number' || c.position < 0 || c.position > 1) {
+    if (typeof c.position !== "number" || c.position < 0 || c.position > 1) {
       console.error("Invalid character position:", c);
       return false;
     }
@@ -56,12 +63,15 @@ export function isValidScene(scene: Scene) {
     }
   }
 
-  if (typeof scene.backdrop !== 'string' || !backdrops.includes(scene.backdrop)) {
+  if (
+    typeof scene.backdrop !== "string" ||
+    !backdrops.includes(scene.backdrop)
+  ) {
     console.error("Invalid backdrop:", scene.backdrop);
     return false;
   }
 
-  if (typeof scene.music !== 'string' || !music.includes(scene.music)) {
+  if (typeof scene.music !== "string" || !music.includes(scene.music)) {
     console.error("Invalid music:", scene.music);
     return false;
   }
@@ -72,15 +82,18 @@ export function isValidScene(scene: Scene) {
   }
 
   for (const a of scene.actions) {
-    if (typeof a.character !== 'string' || !characters.includes(a.character)) {
+    if (typeof a.character !== "string" || !characters.includes(a.character)) {
       console.error("Invalid action character:", a);
       return false;
     }
-    if (typeof a.actionType !== 'string' || !actionTypes.includes(a.actionType)) {
+    if (
+      typeof a.actionType !== "string" ||
+      !actionTypes.includes(a.actionType)
+    ) {
       console.error("Invalid action type:", a);
       return false;
     }
-    if (typeof a.target !== 'string') {
+    if (typeof a.target !== "string") {
       console.error("Invalid action target:", a);
       return false;
     }
@@ -90,7 +103,11 @@ export function isValidScene(scene: Scene) {
 }
 
 // running the create scene function 3 times in order to compensate for inconsistency with the ai
-export async function createSceneWithRetry(currentNode: { topic: string, paths?: string[] }, story: string[], retries = 3) {
+export async function createSceneWithRetry(
+  currentNode: { topic: string; paths?: string[] },
+  story: string[],
+  retries = 3
+) {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       const response = await createScene(currentNode, story);
@@ -114,7 +131,9 @@ export async function createStoryPathWithRetry(retries = 3) {
       console.error(`Attempt ${attempt + 1} failed:`, error);
     }
   }
-  throw new Error("Failed to generate a valid story path after multiple attempts.");
+  throw new Error(
+    "Failed to generate a valid story path after multiple attempts."
+  );
 }
 
 // used for the help page chatpot
@@ -143,7 +162,6 @@ export async function askQuestion(question: string): Promise<string> {
 
       REFUSE TO ANSWER IF IT IS NOT ABOUT GEM PLAY
     `;
-
 
   // returning what the ai gives
   const response = await model.generateContent(prompt);
@@ -218,7 +236,7 @@ export async function createStoryPath() {
   // ensuring the ai responds with JSON
   const response = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { responseMimeType: "application/json" }
+    generationConfig: { responseMimeType: "application/json" },
   });
 
   console.log(response.response.text());
@@ -226,7 +244,10 @@ export async function createStoryPath() {
 }
 
 // creating what actually happens in the scene
-export async function createScene(curretNode: { topic: string, paths?: string[] }, story: string[]) {
+export async function createScene(
+  curretNode: { topic: string; paths?: string[] },
+  story: string[]
+) {
   /*
     Using a detailed prompt to ensure characters properly conduct actions
   */
@@ -277,14 +298,14 @@ export async function createScene(curretNode: { topic: string, paths?: string[] 
   - If a character is dead in a previous scene, then do not include them in the character list
   - EACH CHARACTER MUST BE USED SINGULARARY. ONLY ONE OF EACH CHARACTER
   Return: Scene
-  `
+  `;
 
   // again ensuring JSON format
   const response = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { responseMimeType: "application/json" }
+    generationConfig: { responseMimeType: "application/json" },
   });
 
-  console.log(response.response.text())
+  console.log(response.response.text());
   return JSON.parse(response.response.text());
 }

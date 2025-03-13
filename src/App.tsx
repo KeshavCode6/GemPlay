@@ -4,6 +4,7 @@ import StoryScreen from "./pages/StoryScreen";
 import LoginScreen from "./pages/LoginScreen";
 import HelpScreen from "./pages/HelpScreen";
 import ExportScreen from "./pages/ExportScreen";
+import SignUpScreen from "./pages/SignUpScreen";
 
 const App = () => {
   return (
@@ -12,6 +13,7 @@ const App = () => {
         <Route path="/" element={<MainMenu />} />
         <Route path="/create" element={<StoryScreen />} />
         <Route path="/login" element={<LoginScreen />} />
+        <Route path="/signup" element={<SignUpScreen />} />
         <Route path="/help" element={<HelpScreen />} />
         <Route path="/export" element={<ExportScreen />} />
       </Routes>

@@ -4,15 +4,17 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { Gem, HelpCircle, Plus, UserIcon } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, SetStateAction } from "react";
 import { Link, useNavigate } from "react-router";
 
 export default function MainMenu() {
   const [session, setSession] = useState<Session | null>(null);
+  const [recentStories, setRecentStories] = useState<any[]>([]); // Recent stories
   const navigate = useNavigate();
 
   // Fetch user session on component mount and listen for authentication changes
   useEffect(() => {
+    setRecentStories([]);
     supabase.auth
       .getSession()
       .then(({ data: { session } }) => setSession(session));
@@ -23,22 +25,39 @@ export default function MainMenu() {
       setSession(session)
     );
 
+    if (supabase.auth.getUser() != null) {
+      getStories();
+    }
+
     return () => subscription.unsubscribe();
   }, []);
 
-  // Example recent stories
-  const recentStories = [
-    {
-      title: "The Lost Kingdom",
-      created: "2 days ago",
-      coverImage: "/placeholder.svg?height=80&width=120",
-    },
-    {
-      title: "Starlight Journey",
-      created: "1 week ago",
-      coverImage: "/placeholder.svg?height=80&width=120",
-    },
-  ];
+  const getStories = async () => {
+    let stories: any[] = [];
+    const user = await supabase.auth.getUser();
+
+    const { data, error } = await supabase
+      .from("stories")
+      .select("name, created_at, thumbnail_path")
+      .eq("user", user.data.user?.email)
+      .limit(2)
+      .order("created_at", { ascending: false });
+    data?.forEach(async (obj) => {
+      let { data } = await supabase.storage
+        .from("exported_videos")
+        .getPublicUrl(obj.thumbnail_path);
+      const date = new Date(obj.created_at);
+
+      const story: any = {
+        title: obj.name,
+        created: date.toLocaleDateString(),
+        coverImage: data.publicUrl,
+      };
+
+      stories.push(story);
+    });
+    setRecentStories(stories);
+  };
 
   // Logout function
   async function logout() {
@@ -72,7 +91,6 @@ export default function MainMenu() {
   return (
     <div className="h-screen relative bg-amber-50 flex flex-col items-center p-4 md:p-8">
       <Background /> {/* Background component */}
-
       {/* Header Section */}
       <header className="w-full max-w-4xl flex items-center justify-between mt-12 mb-8 z-50">
         <div className="flex items-center gap-2 ">
@@ -81,7 +99,6 @@ export default function MainMenu() {
         </div>
         {topButton()} {/* Dynamic login/logout button */}
       </header>
-
       {/* Main Content */}
       <main className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center gap-8 mt-24 z-50">
         {/* Welcome Section */}
@@ -93,7 +110,8 @@ export default function MainMenu() {
             </span>
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Unleash your creativity and craft amazing stories with our intuitive tools.
+            Unleash your creativity and craft amazing stories with our intuitive
+            tools.
           </p>
         </div>
 
@@ -126,6 +144,7 @@ export default function MainMenu() {
         </div>
 
         {/* Recent Stories Section */}
+
         <div className="w-full mt-8">
           <h3 className="text-xl font-semibold mb-4">Recent Stories</h3>
           {recentStories.length > 0 ? (

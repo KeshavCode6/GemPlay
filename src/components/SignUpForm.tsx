@@ -11,9 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
 
-export function LoginForm({
+export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
@@ -29,22 +28,21 @@ export function LoginForm({
     };
 
     // Signing in user with Supabase authentication
-    const { error } = await supabase.auth.signInWithPassword({
+    await supabase.auth.signUp({
       email: formElements.email.value,
       password: formElements.password.value,
     });
-    toast(error?.message);
 
-    if (!error) navigate("/"); // Redirect to home page after successful login
+    navigate("/login"); // Redirect to home page after successful login
   }
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Login to your account</CardTitle>
+          <CardTitle>Create a new account</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter the email you wish to create your account with
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -65,12 +63,6 @@ export function LoginForm({
               <div className="grid gap-3">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </a>
                 </div>
                 <Input id="password" type="password" required />
               </div>
@@ -78,17 +70,9 @@ export function LoginForm({
               {/* Submit Button */}
               <div className="flex flex-col gap-3">
                 <Button type="submit" className="w-full">
-                  Login
+                  Create Account
                 </Button>
               </div>
-            </div>
-
-            {/* Sign-up Link */}
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <Link to="/signup" className="underline underline-offset-4">
-                Sign up
-              </Link>
             </div>
           </form>
         </CardContent>
