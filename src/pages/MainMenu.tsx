@@ -1,6 +1,14 @@
 import Background from "@/components/Background";
 import { StoryCard } from "@/components/StoryCard";
 import { Button } from "@/components/ui/button";
+import {
+  DialogHeader,
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { Gem, HelpCircle, MoveRight, Plus, UserIcon } from "lucide-react";
@@ -162,7 +170,21 @@ export default function MainMenu() {
               {recentStories.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {recentStories.map((story, index) => (
-                    <StoryCard key={index} story={story} />
+                    <Dialog key={index}>
+                      <DialogTrigger>
+                        <StoryCard story={story} />
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{story.title}</DialogTitle>
+                          <DialogDescription>{story.created}</DialogDescription>
+                        </DialogHeader>
+                        <video controls className="w-full">
+                          <source src={story.video} type="video/mp4" />
+                          Your browser does not support the video tag.
+                        </video>
+                      </DialogContent>
+                    </Dialog>
                   ))}
                 </div>
               ) : (

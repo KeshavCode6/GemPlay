@@ -4,6 +4,14 @@ import {
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@radix-ui/react-dialog";
+import { DialogHeader } from "./ui/dialog";
 
 // Each database record with the videos
 export function StoryCard({ story }: { story: any }) {

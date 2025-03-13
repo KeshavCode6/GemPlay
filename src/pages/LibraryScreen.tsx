@@ -88,9 +88,9 @@ export default function LibraryScreen() {
             {recentStories.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {recentStories.map((story, index) => (
-                  <Dialog>
+                  <Dialog key={index}>
                     <DialogTrigger>
-                      <StoryCard key={index} story={story} />
+                      <StoryCard story={story} />
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>

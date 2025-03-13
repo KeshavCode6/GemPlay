@@ -142,6 +142,8 @@ export default function ExportScreen() {
       thumbnail_path: thumbnailFileName,
       user: (await supabase.auth.getUser()).data.user?.email,
     });
+
+    toast("Video Uploaded Successfully!");
   };
 
   const downloadVideo = () => {
@@ -155,6 +157,7 @@ export default function ExportScreen() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    toast("Video Downloaded Succesfully");
   };
 
   return (
