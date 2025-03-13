@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Background from "@/components/Background";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,16 @@ import { toast } from "sonner";
 
 export default function ExportScreen() {
   const [videoName, setVideoName] = useState("");
+  const [signedIn, setSignedIn] = useState(false);
   const [error, setError] = useState("");
   const location = useLocation();
   const videoUrl = location.state?.videoUrl;
+
+  useEffect(() => {
+    supabase.auth.getUser().then((data) => {
+      setSignedIn(data.data.user != null);
+    });
+  }, []);
 
   const handleDownload = () => {
     const trimmedName = videoName.trim();
@@ -129,9 +136,12 @@ export default function ExportScreen() {
       console.error("Thumbnail generation error:", err);
     }
 
-    const { error: dbError } = await supabase
-      .from("stories")
-      .insert({ id: 1, name: "Mordor" });
+    const { error: dbError } = await supabase.from("stories").insert({
+      name: videoName,
+      video_path: fileName,
+      thumbnail_path: thumbnailFileName,
+      user: (await supabase.auth.getUser()).data.user?.email,
+    });
   };
 
   const downloadVideo = () => {
@@ -183,7 +193,11 @@ export default function ExportScreen() {
                   <Download />
                   Download
                 </Button>
-                <Button className="text-white" onClick={handleUpload}>
+                <Button
+                  className="text-white"
+                  onClick={handleUpload}
+                  disabled={!signedIn}
+                >
                   <Upload />
                   Upload
                 </Button>

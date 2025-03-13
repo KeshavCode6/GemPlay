@@ -3,13 +3,14 @@ import { StoryCard } from "@/components/StoryCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
-import { Gem, HelpCircle, Plus, UserIcon } from "lucide-react";
+import { Gem, HelpCircle, MoveRight, Plus, UserIcon } from "lucide-react";
 import { useState, useEffect, SetStateAction } from "react";
 import { Link, useNavigate } from "react-router";
 
 export default function MainMenu() {
   const [session, setSession] = useState<Session | null>(null);
   const [recentStories, setRecentStories] = useState<any[]>([]); // Recent stories
+  const [signedIn, setSignedIn] = useState(false);
   const navigate = useNavigate();
 
   // Fetch user session on component mount and listen for authentication changes
@@ -25,9 +26,10 @@ export default function MainMenu() {
       setSession(session)
     );
 
-    if (supabase.auth.getUser() != null) {
+    supabase.auth.getUser().then((data) => {
+      setSignedIn(data.data.user != null);
       getStories();
-    }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -144,21 +146,35 @@ export default function MainMenu() {
         </div>
 
         {/* Recent Stories Section */}
+        <div className="w-full mt-8 h-100%">
+          {signedIn ? (
+            <div>
+              <div className="flex flex-row gap-6">
+                <h3 className="text-xl font-semibold mb-4">Recent Stories</h3>
+                <Link to="/library">
+                  <Button className="text-white">
+                    See More
+                    <MoveRight></MoveRight>
+                  </Button>
+                </Link>
+              </div>
 
-        <div className="w-full mt-8">
-          <h3 className="text-xl font-semibold mb-4">Recent Stories</h3>
-          {recentStories.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {recentStories.map((story, index) => (
-                <StoryCard key={index} story={story} />
-              ))}
+              {recentStories.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {recentStories.map((story, index) => (
+                    <StoryCard key={index} story={story} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-left">
+                  <p className="text-muted-foreground mb-2">
+                    No stories saved. Create one to get started
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="text-left">
-              <p className="text-muted-foreground mb-2">
-                No stories saved. Create one to get started
-              </p>
-            </div>
+            <div></div>
           )}
         </div>
       </main>
