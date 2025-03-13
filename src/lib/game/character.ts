@@ -142,7 +142,7 @@ export class Character {
         if (this.targetPosition !== null) {
             const diff = this.targetPosition - this.x;
             this.direction = diff < 0 ? "left" : "right";
-            this.x += this.speed * (this.direction === "left" ? -0.25 : 0.25);
+            this.x += this.speed * (this.direction === "left" ? -0.5 : 0.5);
             this.setAnimation("walk");
 
             // Stop moving when reaching the target

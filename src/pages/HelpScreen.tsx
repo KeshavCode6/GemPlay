@@ -92,7 +92,7 @@ export default function HelpScreen() {
                     </CardHeader>
 
                     {/* Scrollable chat area */}
-                    <ScrollArea className="flex-1 p-4 max-h-[75%]">
+                    <ScrollArea className="flex-1 p-4 max-h-[65%]">
                         <div className="space-y-4">
                             {messages.map((message) => (
                                 <div key={message.id} className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}>
