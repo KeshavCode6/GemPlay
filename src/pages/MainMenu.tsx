@@ -1,18 +1,10 @@
 import Background from "@/components/Background";
 import { StoryCard } from "@/components/StoryCard";
 import { Button } from "@/components/ui/button";
-import {
-  DialogHeader,
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { Gem, HelpCircle, MoveRight, Plus, UserIcon } from "lucide-react";
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 
 export default function MainMenu() {
@@ -46,7 +38,7 @@ export default function MainMenu() {
     let stories: any[] = [];
     const user = await supabase.auth.getUser();
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("stories")
       .select("name, created_at, thumbnail_path")
       .eq("user", user.data.user?.email)

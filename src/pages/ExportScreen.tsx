@@ -41,6 +41,10 @@ export default function ExportScreen() {
       setError("Video name cannot have spaces!");
       return;
     }
+    if (trimmedName.length < 2 || trimmedName.length > 32) {
+      setError("Video name has to be between 2 and 32 characters!");
+      return;
+    }
 
     setError(""); // Clear errors if validation passes
     downloadVideo();
@@ -57,7 +61,10 @@ export default function ExportScreen() {
       setError("Video name cannot have spaces!");
       return;
     }
-
+    if (trimmedName.length < 2 || trimmedName.length > 32) {
+      setError("Video name has to be between 2 and 32 characters!");
+      return;
+    }
     setError(""); // Clear errors if validation passes
     uploadVideo();
   };
@@ -140,7 +147,7 @@ export default function ExportScreen() {
       console.error("Thumbnail generation error:", err);
     }
 
-    const { error: dbError } = await supabase.from("stories").insert({
+    await supabase.from("stories").insert({
       name: videoName,
       video_path: fileName,
       thumbnail_path: thumbnailFileName,

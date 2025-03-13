@@ -11,11 +11,7 @@ import {
   DialogContent,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Download } from "lucide-react";
-import { toast } from "sonner";
 
 // Each database record with the videos
 export function StoryCard({ story }: { story: any }) {

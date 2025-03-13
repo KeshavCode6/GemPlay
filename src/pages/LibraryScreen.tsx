@@ -1,26 +1,13 @@
 import Background from "@/components/Background";
 import Header from "@/components/Header";
 import { StoryCard } from "@/components/StoryCard";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
-import { Gem, HelpCircle, MoveRight, Plus, UserIcon } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router";
 
 export default function LibraryScreen() {
   const [session, setSession] = useState<Session | null>(null);
   const [recentStories, setRecentStories] = useState<any[]>([]); // Recent stories
-  const [signedIn, setSignedIn] = useState(false);
-  const navigate = useNavigate();
 
   // Fetch user session on component mount and listen for authentication changes
   useEffect(() => {
@@ -35,10 +22,7 @@ export default function LibraryScreen() {
       setSession(session)
     );
 
-    supabase.auth.getUser().then((data) => {
-      setSignedIn(data.data.user != null);
-      getStories();
-    });
+    getStories();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -47,7 +31,7 @@ export default function LibraryScreen() {
     let stories: any[] = [];
     const user = await supabase.auth.getUser();
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("stories")
       .select("name, created_at, thumbnail_path, video_path")
       .eq("user", user.data.user?.email)
@@ -85,7 +69,7 @@ export default function LibraryScreen() {
       <main className="flex-1 w-full max-w-4xl flex flex-col items-center justify-center gap-8 mt-16 z- overflow-y-scroll h-100%">
         <div className="w-full h-full">
           <div>
-            {recentStories.length > 0 ? (
+            {recentStories.length > 0 && session ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {recentStories.map((story, index) => (
                   <StoryCard key={index} story={story} />
