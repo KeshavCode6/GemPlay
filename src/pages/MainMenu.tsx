@@ -170,21 +170,7 @@ export default function MainMenu() {
               {recentStories.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {recentStories.map((story, index) => (
-                    <Dialog key={index}>
-                      <DialogTrigger>
-                        <StoryCard story={story} />
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{story.title}</DialogTitle>
-                          <DialogDescription>{story.created}</DialogDescription>
-                        </DialogHeader>
-                        <video controls className="w-full">
-                          <source src={story.video} type="video/mp4" />
-                          Your browser does not support the video tag.
-                        </video>
-                      </DialogContent>
-                    </Dialog>
+                    <StoryCard key={index} story={story} />
                   ))}
                 </div>
               ) : (

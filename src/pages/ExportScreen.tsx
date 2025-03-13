@@ -97,15 +97,20 @@ export default function ExportScreen() {
 
   const uploadVideo = async () => {
     if (!videoUrl) return;
-    toast("Uploading Video");
 
     const fileName = `videos/${videoName}.mp4`;
     const thumbnailFileName = `thumbnails/${videoName}.jpg`;
 
-    let videoBlob = await fetch(videoUrl).then((r) => r.blob());
+    console.log(videoUrl);
+
+    let video = await fetch(videoUrl)
+      .then((r) => r.blob())
+      .then(
+        (blobFile) => new File([blobFile], videoName, { type: "video/mp4" })
+      );
     const { data, error: vidError } = await supabase.storage
       .from("exported_videos") // Replace with your actual bucket name
-      .upload(fileName, videoBlob, {
+      .upload(fileName, video, {
         contentType: "video/mp4",
       });
 
@@ -114,7 +119,6 @@ export default function ExportScreen() {
     } else {
       console.log("Video uploaded:", data);
       toast("Video uploaded successfully!");
-      return;
     }
 
     // Generate and upload thumbnail
@@ -142,8 +146,6 @@ export default function ExportScreen() {
       thumbnail_path: thumbnailFileName,
       user: (await supabase.auth.getUser()).data.user?.email,
     });
-
-    toast("Video Uploaded Successfully!");
   };
 
   const downloadVideo = () => {
@@ -157,7 +159,6 @@ export default function ExportScreen() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast("Video Downloaded Succesfully");
   };
 
   return (

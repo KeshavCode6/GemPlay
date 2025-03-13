@@ -23,10 +23,16 @@ export default function StoryScreen() {
   const story: string[] = [];
   const navigate = useNavigate();
 
-  const { startRecording, stopRecording, pauseRecording, resumeRecording, mediaBlobUrl } = useReactMediaRecorder({
+  const {
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    mediaBlobUrl,
+  } = useReactMediaRecorder({
     screen: true,
     audio: false,
-    video: false
+    video: false,
   });
 
   useEffect(() => {
@@ -49,7 +55,7 @@ export default function StoryScreen() {
       stopRecording();
     } else {
       startRecording();
-      pauseRecording()
+      pauseRecording();
     }
     setIsRecording(!isRecording);
   }
@@ -73,6 +79,7 @@ export default function StoryScreen() {
 
   useEffect(() => {
     if (shouldNavigate && mediaBlobUrl) {
+      console.log(mediaBlobUrl);
       navigate("/export", { state: { videoUrl: mediaBlobUrl } });
     }
   }, [mediaBlobUrl, shouldNavigate, navigate]);
@@ -148,7 +155,13 @@ export default function StoryScreen() {
                     )}
                     <Button
                       variant={"destructive"}
-                      onClick={isRecording ? goToExport : () => { navigate("/") }}
+                      onClick={
+                        isRecording
+                          ? goToExport
+                          : () => {
+                              navigate("/");
+                            }
+                      }
                       className="w-full h-[4rem] text-lg text-white"
                     >
                       <LogOut /> Exit

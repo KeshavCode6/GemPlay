@@ -13,7 +13,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { Gem, HelpCircle, MoveRight, Plus, UserIcon } from "lucide-react";
-import { useState, useEffect, SetStateAction } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 
 export default function LibraryScreen() {
@@ -69,7 +69,7 @@ export default function LibraryScreen() {
         video: video.publicUrl,
       };
 
-      console.log(story);
+      console.log(story.video);
 
       stories.push(story);
     });
@@ -88,21 +88,7 @@ export default function LibraryScreen() {
             {recentStories.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {recentStories.map((story, index) => (
-                  <Dialog key={index}>
-                    <DialogTrigger>
-                      <StoryCard story={story} />
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{story.title}</DialogTitle>
-                        <DialogDescription>{story.created}</DialogDescription>
-                      </DialogHeader>
-                      <video controls className="w-full">
-                        <source src={story.video} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
-                    </DialogContent>
-                  </Dialog>
+                  <StoryCard key={index} story={story} />
                 ))}
               </div>
             ) : (
