@@ -1,8 +1,6 @@
 import { Scene } from "../ai";
 import { Character } from "./character";
 
-// Global storage for all recorded snippets across instances
-const recordedSnippets: Blob[] = [];
 
 export class CanvasManager {
     canvas: HTMLCanvasElement;
@@ -21,19 +19,19 @@ export class CanvasManager {
     speak: (src: string, speech: string) => void;
     done: boolean = false;
     activeAction: boolean = false;
-
-    // Recording setup
-    mediaRecorder: MediaRecorder | null = null;
-    recordedChunks: Blob[] = [];
+    resumeRecord: any;
+    resumed: boolean = false;
 
     constructor(
         canvas: HTMLCanvasElement,
         scene: Scene,
         nextTopic: () => void,
-        speak: (src: string, speech: string) => void
+        speak: (src: string, speech: string) => void,
+        resumeRecord: any,
     ) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
+        this.resumeRecord = resumeRecord;
 
         this.ctx!.imageSmoothingEnabled = true;
         this.ctx!.imageSmoothingQuality = "low";
@@ -58,80 +56,8 @@ export class CanvasManager {
                 )
             );
         });
-
-        // Setup recording
-        this.setupRecording();
     }
 
-    addClip() {
-        console.log("Recording stopped, storing snippet...");
-
-        // Ensure data is properly captured before finalizing
-        if (this.mediaRecorder?.state !== "inactive") {
-            this.mediaRecorder?.requestData();
-        }
-
-        // Store snippet globally
-        const blob = new Blob(this.recordedChunks, { type: "video/webm;codecs=vp8" });
-        recordedSnippets.push(blob);
-        console.log(recordedSnippets)
-        console.log(`Stored snippet ${recordedSnippets.length} in global memory.`);
-    }
-    // Initialize the MediaRecorder
-    setupRecording() {
-        try {
-            const stream = this.canvas.captureStream(30); // 30 FPS
-            this.mediaRecorder = new MediaRecorder(stream, {
-                mimeType: "video/webm;codecs=vp8", // Use vp8 for broader browser support
-            });
-
-            this.mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    console.log("Data available:", event.data);
-                    this.recordedChunks.push(event.data);
-                }
-            };
-
-            this.mediaRecorder.onstop = this.addClip;
-
-            this.mediaRecorder.onerror = (event) => {
-                console.error("MediaRecorder error:", event);
-            };
-
-            console.log("MediaRecorder initialized successfully.");
-        } catch (error) {
-            console.error("Error setting up recording:", error);
-        }
-    }
-
-    startRecording() {
-        if (!this.mediaRecorder) {
-            console.error("MediaRecorder is not initialized!");
-            return;
-        }
-        if (this.mediaRecorder.state === "inactive") {
-            this.recordedChunks = []; // Reset chunks
-            this.mediaRecorder.start(1000); // Request data every 1 second
-            console.log("Recording started...");
-        }
-    }
-
-    stopRecording(): Promise<void> {
-        return new Promise((resolve) => {
-            if (this.mediaRecorder && this.mediaRecorder.state === "recording") {
-                console.log("Stopping recording...");
-                this.mediaRecorder.requestData(); // Force final data save
-                this.mediaRecorder.onstop = () => {
-                    console.log("Recording stopped, storing snippet...");
-                    this.addClip();
-                    resolve();
-                };
-                this.mediaRecorder.stop();
-            } else {
-                resolve();
-            }
-        });
-    }
 
     draw() {
         this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -172,61 +98,49 @@ export class CanvasManager {
             actionCharacter?.handleAction(action.actionType, target, this.nextAction);
             this.activeAction = true;
         }
+
+        if (!this.resumed) {
+            this.resumeRecord();
+            this.resumed = true;
+        }
     }
 
     async nextAction() {
         this.currentAction += 1;
         this.activeAction = false;
 
+        console.log("scene ended?");
+
         if (this.currentAction == this.scene.actions.length) {
             this.done = true;
-            await this.stopRecording();
             setTimeout(() => {
                 if (this.nextTopic) {
                     this.nextTopic();
                 }
             }, 2000);
+            return;
+        }
+
+        const previousAction = this.scene.actions[this.currentAction - 1];
+
+        // Wait before executing the next action
+        if (previousAction?.actionType === "attack01") {
+            console.log("Attack action detected, waiting 5 seconds...");
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+        } else {
+            await new Promise((resolve) => setTimeout(resolve, 500));
         }
     }
-
     async start() {
         this.lastTime = performance.now();
         this.update(this.lastTime);
 
         await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
-        this.startRecording();
     }
 
     stop() {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId);
         }
-        this.stopRecording();
     }
-}
-
-// Function to merge and download all recorded snippets
-export function downloadFinalRecording() {
-    if (recordedSnippets.length === 0) {
-        console.warn("No video snippets recorded.");
-        return;
-    }
-
-    console.log("Merging all video snippets...");
-
-    // Merge all recorded snippets into one Blob
-    const finalBlob = new Blob(recordedSnippets, { type: "video/webm;codecs=vp8" });
-
-    console.log("Final video ready for download.");
-
-    // Trigger the download
-    const url = URL.createObjectURL(finalBlob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "canvas-final-recording.webm";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    console.log("Download triggered.");
 }

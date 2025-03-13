@@ -123,6 +123,10 @@
   }
 }
 
+canvas {
+  cursor: none;
+}
+
 
 .pixelated {
   image-rendering: pixelated;

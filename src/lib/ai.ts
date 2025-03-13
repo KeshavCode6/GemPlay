@@ -9,7 +9,6 @@ const characters = [
   "archer",
   "knight",
   "orc",
-  "preist",
   "skeleton",
   "slime",
   "soldier",

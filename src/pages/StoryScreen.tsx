@@ -3,50 +3,78 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { createStoryPathWithRetry } from "@/lib/ai";
 import { motion, AnimatePresence } from "framer-motion";
-import { LogOut } from "lucide-react";
+import { LogOut, StopCircle, Video } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Story } from "./Story";
 import Background from "@/components/Background";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useReactMediaRecorder } from "react-media-recorder";
 
 export default function StoryScreen() {
   const storyPath = useRef<any>(null);
   const [active, setActive] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [shouldNavigate, setShouldNavigate] = useState(false); // Flag to wait for mediaBlobUrl
+
   const [currentNode, setCurrentNode] = useState<{
     topic: string;
     paths?: any[];
   } | null>(null);
   const story: string[] = [];
+  const navigate = useNavigate();
 
+  const { startRecording, stopRecording, pauseRecording, resumeRecording, mediaBlobUrl } = useReactMediaRecorder({
+    screen: true,
+    audio: true
+  });
 
-  let run = 0;
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    run += 1;
 
     async function getTopics() {
       if (storyPath.current) return;
-
       const t = await createStoryPathWithRetry();
       storyPath.current = t;
       setCurrentNode(t);
     }
 
-    if (!currentNode && !storyPath.current && run == 1) {
+    if (!currentNode && !storyPath.current) {
       getTopics();
     }
   }, []);
 
+  function toggleRecording() {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      startRecording();
+      pauseRecording()
+    }
+    setIsRecording(!isRecording);
+  }
+
   function activeOption(index: number) {
     if (currentNode?.paths) {
       setCurrentNode(currentNode.paths[index]);
-      story.push(currentNode.paths[index])
+      story.push(currentNode.paths[index]);
       setActive(true);
     }
   }
+
+  function resumeRecord() {
+    resumeRecording();
+  }
+
+  function goToExport() {
+    setShouldNavigate(true); // Wait for mediaBlobUrl before navigating
+    stopRecording();
+  }
+
   useEffect(() => {
-    console.log(currentNode);
-  }, [currentNode]);
+    if (shouldNavigate && mediaBlobUrl) {
+      navigate("/export", { state: { videoUrl: mediaBlobUrl } });
+    }
+  }, [mediaBlobUrl, shouldNavigate, navigate]);
 
   return (
     <motion.div
@@ -79,11 +107,18 @@ export default function StoryScreen() {
             transition={{ duration: 0.5 }}
           >
             {!active ? (
-              <Card className="w-[50vw] gap-0 p-8 flex flex-col">
+              <Card className="w-[50vw] gap-0 p-8 flex flex-col relative">
                 <p className="text-black font-bold text-2xl">Choose a topic!</p>
                 <p className="text-muted-foreground">
                   The rest of the story depends on what you pick
                 </p>
+                <Button
+                  onClick={toggleRecording}
+                  variant={isRecording ? "destructive" : "default"}
+                  className="absolute top-4 right-4 text-white"
+                >
+                  {isRecording ? <StopCircle /> : <Video />}
+                </Button>
                 {currentNode ? (
                   <div className="grid grid-cols-1 gap-1 mt-8">
                     {currentNode.paths?.length !== 0 && currentNode.paths ? (
@@ -110,19 +145,16 @@ export default function StoryScreen() {
                         THE END!!
                       </div>
                     )}
-                    <Link to={"/export"}>
-                      <Button
-                        variant={"destructive"}
-                        className="w-full h-[4rem] text-lg text-white"
-                      >
-                        <LogOut /> Exit
-                      </Button>
-                    </Link>
-
+                    <Button
+                      variant={"destructive"}
+                      onClick={goToExport}
+                      className="w-full h-[4rem] text-lg text-white"
+                    >
+                      <LogOut /> Exit
+                    </Button>
                   </div>
                 ) : (
                   <>
-
                     <Loading />
                     <Link to={"/"}>
                       <Button
@@ -133,7 +165,6 @@ export default function StoryScreen() {
                       </Button>
                     </Link>
                   </>
-
                 )}
               </Card>
             ) : (
@@ -141,7 +172,9 @@ export default function StoryScreen() {
                 currentNode={currentNode}
                 nextTopic={() => {
                   setActive(false);
+                  pauseRecording();
                 }}
+                resumeRecord={resumeRecord}
                 story={story}
               />
             )}

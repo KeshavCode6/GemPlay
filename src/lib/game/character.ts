@@ -219,7 +219,7 @@ export class Character {
                     this.speach = null;
                     this.speak("");
                     nextAction();
-                }, 3000);
+                }, 3500);
             }, 100); // Small delay ensures proper sequencing
         }
     }

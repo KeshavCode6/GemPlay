@@ -10,11 +10,13 @@ import { AnimatePresence, motion } from "framer-motion";
 export function Story({
   currentNode,
   nextTopic,
-  story
+  story,
+  resumeRecord
 }: {
   currentNode: { topic: string; paths?: any } | undefined | null;
   nextTopic: () => void;
   story: string[];
+  resumeRecord: any;
 }) {
   // References for canvas and audio elements
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -36,7 +38,8 @@ export function Story({
             canvasRef.current,
             scene,
             nextTopic,
-            speak
+            speak,
+            resumeRecord
           );
           setCanvasManager(manager);
           manager.start();

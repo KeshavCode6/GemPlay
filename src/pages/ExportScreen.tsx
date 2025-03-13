@@ -11,13 +11,15 @@ import {
 } from "@/components/ui/card";
 
 import { Input } from "@/components/ui/input";
-import { downloadFinalRecording } from "@/lib/game/canvas";
 import { Label } from "@radix-ui/react-label";
 import { Download } from "lucide-react";
+import { useLocation } from "react-router";
 
 export default function ExportScreen() {
     const [videoName, setVideoName] = useState("");
     const [error, setError] = useState("");
+    const location = useLocation();
+    const videoUrl = location.state?.videoUrl;
 
     const handleDownload = () => {
         const trimmedName = videoName.trim();
@@ -32,7 +34,6 @@ export default function ExportScreen() {
         }
 
         setError(""); // Clear errors if validation passes
-        downloadFinalRecording();
     };
 
     return (
@@ -41,11 +42,20 @@ export default function ExportScreen() {
             <Header />
 
             <div className="mt-28 z-50">
-                <Card className="aspect-video w-96">
+                <Card className="aspect-video max-w-xl p-8">
                     <CardHeader>
                         <CardTitle>Export Story</CardTitle>
                         <CardDescription>Name your story before exporting</CardDescription>
                     </CardHeader>
+
+                    {videoUrl ? (
+                        <video controls className="w-full">
+                            <source src={videoUrl} type="video/webm" />
+                            Your browser does not support the video tag.
+                        </video>
+                    ) : (
+                        <p className="text-red-500 mt-4">No recording found!</p>
+                    )}
                     <CardContent>
                         <div className="flex flex-col gap-6">
                             <div className="grid gap-3">
