@@ -25,7 +25,8 @@ export default function StoryScreen() {
 
   const { startRecording, stopRecording, pauseRecording, resumeRecording, mediaBlobUrl } = useReactMediaRecorder({
     screen: true,
-    audio: true
+    audio: false,
+    video: false
   });
 
   useEffect(() => {
@@ -147,7 +148,7 @@ export default function StoryScreen() {
                     )}
                     <Button
                       variant={"destructive"}
-                      onClick={goToExport}
+                      onClick={isRecording ? goToExport : () => { navigate("/") }}
                       className="w-full h-[4rem] text-lg text-white"
                     >
                       <LogOut /> Exit
