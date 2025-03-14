@@ -40,21 +40,28 @@ export default function MainMenu() {
 
     const { data } = await supabase
       .from("stories")
-      .select("name, created_at, thumbnail_path")
+      .select("name, created_at, thumbnail_path, video_path")
       .eq("user", user.data.user?.email)
       .limit(2)
       .order("created_at", { ascending: false });
     data?.forEach(async (obj) => {
-      let { data } = await supabase.storage
+      let { data: thumb } = await supabase.storage
         .from("exported_videos")
         .getPublicUrl(obj.thumbnail_path);
+
+      let { data: video } = await supabase.storage
+        .from("exported_videos")
+        .getPublicUrl(obj.video_path);
+
       const date = new Date(obj.created_at);
 
       const story: any = {
         title: obj.name,
         created: date.toLocaleDateString(),
-        coverImage: data.publicUrl,
+        coverImage: thumb.publicUrl,
+        video: video.publicUrl,
       };
+      console.log();
 
       stories.push(story);
     });

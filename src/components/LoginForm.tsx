@@ -56,7 +56,7 @@ export function LoginForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="aarav.narayan@gmail.com"
+                  defaultValue="aarav.narayan@gmail.com"
                   required
                 />
               </div>
@@ -75,7 +75,7 @@ export function LoginForm({
                 <Input
                   id="password"
                   type="password"
-                  placeholder="BandarGyatt!123"
+                  defaultValue="BandarGyatt!123"
                   required
                 />
               </div>
