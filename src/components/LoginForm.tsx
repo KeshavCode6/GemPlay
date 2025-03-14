@@ -56,7 +56,7 @@ export function LoginForm({
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="aarav.narayan@gmail.com"
                   required
                 />
               </div>
@@ -72,7 +72,12 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="BandarGyatt!123"
+                  required
+                />
               </div>
 
               {/* Submit Button */}
