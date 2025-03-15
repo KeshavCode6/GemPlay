@@ -11,7 +11,7 @@ export function Story({
   currentNode,
   nextTopic,
   story,
-  resumeRecord
+  resumeRecord,
 }: {
   currentNode: { topic: string; paths?: any } | undefined | null;
   nextTopic: () => void;
@@ -23,10 +23,11 @@ export function Story({
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // State management
-  const [canvasManager, setCanvasManager] = useState<CanvasManager | null>(null);
+  const [canvasManager, setCanvasManager] = useState<CanvasManager | null>(
+    null
+  );
   const [speech, setSpeech] = useState<string>("");
   const [volume, setVolume] = useState<number>(0.5);
-
 
   useEffect(() => {
     if (currentNode) {
@@ -60,7 +61,6 @@ export function Story({
           .catch((err) => console.error("Audio play error:", err));
       });
     }
-
 
     // Cleanup function to stop canvas and audio on unmount
     return () => {
@@ -135,7 +135,9 @@ export function Story({
               transition={{ duration: 0.3, ease: "easeInOut" }}
               className="absolute top-4 left-8 right-8 rounded-lg bg-black/[0.8] flex items-center space-x-4 p-4"
             >
-              <p className="text-white w-full text-center font-bold text-lg">{speech}</p>
+              <p className="text-white w-full text-center font-bold text-lg">
+                {speech}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
